@@ -1,0 +1,7 @@
+{
+  "name": "itv-responsive-check",
+  "private": true,
+  "type": "module",
+  "scripts": { "check": "node check.mjs" },
+  "devDependencies": { "puppeteer-core": "24.10.0" }
+}

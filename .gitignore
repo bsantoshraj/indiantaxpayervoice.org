@@ -1,0 +1,20 @@
+# Secrets and local state — never commit
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Generated public statistics (publish from the pipeline, not git)
+public-stats/
+var/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+node_modules/
+survey-failure.png

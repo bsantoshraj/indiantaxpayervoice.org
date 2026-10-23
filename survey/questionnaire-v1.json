@@ -1,0 +1,114 @@
+{
+  "survey_version": "v1-draft",
+  "status": "draft — not reviewed; do not launch before privacy and methodology review",
+  "title": "Indian Taxpayer Voice survey",
+  "description": "A short, anonymous survey about the concerns of people who pay taxes in India. It takes about five minutes.",
+  "welcome": "Thank you for taking part. This survey is voluntary and anonymous. It is not an official government survey, and taking part does not provide any financial, insurance or other benefit. Please do not include your name, contact details or other identifying information in any answer.",
+  "end_text": "Thank you. Your response has been recorded. Aggregated results are published on the Indian Taxpayer Voice website once enough responses are received.",
+  "consent": {
+    "code": "CONSENT",
+    "text": "I am 18 or older, I have read the privacy notice, and I agree that my anonymous answers may be included in published aggregate statistics."
+  },
+  "questions": [
+    {
+      "code": "STATE", "role": "geography", "type": "list", "display": "dropdown", "required": true, "group": "About you",
+      "text": "Which state or union territory do you live in?",
+      "options": {
+        "AN": "Andaman and Nicobar Islands", "AP": "Andhra Pradesh", "AR": "Arunachal Pradesh", "AS": "Assam",
+        "BR": "Bihar", "CH": "Chandigarh", "CG": "Chhattisgarh", "DH": "Dadra and Nagar Haveli and Daman and Diu",
+        "DL": "Delhi", "GA": "Goa", "GJ": "Gujarat", "HR": "Haryana", "HP": "Himachal Pradesh",
+        "JK": "Jammu and Kashmir", "JH": "Jharkhand", "KA": "Karnataka", "KL": "Kerala", "LA": "Ladakh",
+        "LD": "Lakshadweep", "MP": "Madhya Pradesh", "MH": "Maharashtra", "MN": "Manipur", "ML": "Meghalaya",
+        "MZ": "Mizoram", "NL": "Nagaland", "OD": "Odisha", "PY": "Puducherry", "PB": "Punjab", "RJ": "Rajasthan",
+        "SK": "Sikkim", "TN": "Tamil Nadu", "TS": "Telangana", "TR": "Tripura", "UP": "Uttar Pradesh",
+        "UK": "Uttarakhand", "WB": "West Bengal"
+      }
+    },
+    {
+      "code": "INDUSTRY", "role": "breakdown", "type": "list", "required": true, "group": "About you",
+      "text": "Which broad sector do you mainly work in?",
+      "help": "If you are not currently working, choose \"Not currently employed\".",
+      "options": {
+        "AGRI": "Agriculture, forestry and fishing", "MANUF": "Manufacturing", "CONST": "Construction and real estate",
+        "TRADE": "Wholesale and retail trade", "TRANS": "Transport and logistics",
+        "ITSW": "Information technology and software", "FIN": "Banking, finance and insurance", "EDU": "Education",
+        "HLTH": "Healthcare", "GOVT": "Government and public sector", "HOSP": "Hospitality and tourism",
+        "MEDIA": "Media and telecommunications", "PROF": "Professional services", "OTH": "Other sector",
+        "NOTEM": "Not currently employed"
+      }
+    },
+    {
+      "code": "EMPTYPE", "role": "breakdown", "type": "list", "required": false, "group": "About you",
+      "text": "What best describes how you mainly earn your income?",
+      "options": {
+        "SALPR": "Salaried — private sector", "SALGV": "Salaried — government or public sector",
+        "SELF": "Self-employed or business owner", "GIG": "Contract, freelance or gig work",
+        "UNEMP": "Not currently earning", "RETD": "Retired", "STUD": "Student", "PNTS": "Prefer not to say"
+      }
+    },
+    {
+      "code": "INCOME", "role": "breakdown", "type": "list", "required": false, "group": "About you",
+      "text": "Which range best describes your annual individual income before tax?",
+      "help": "Broad ranges only. We never ask for your exact income.",
+      "options": {
+        "B1": "Up to ₹4 lakh", "B2": "₹4 lakh to ₹12 lakh", "B3": "₹12 lakh to ₹24 lakh",
+        "B4": "Above ₹24 lakh", "PNTS": "Prefer not to say"
+      }
+    },
+    {
+      "code": "GENDER", "role": "breakdown", "type": "list", "required": false, "group": "About you",
+      "text": "What is your gender?",
+      "options": { "W": "Woman", "M": "Man", "X": "Another gender identity", "PNTS": "Prefer not to say" }
+    },
+    {
+      "code": "AGEBAND", "role": "breakdown", "type": "list", "required": false, "group": "About you",
+      "text": "What is your age group?",
+      "options": {
+        "A1": "18 to 24", "A2": "25 to 34", "A3": "35 to 44", "A4": "45 to 59", "A5": "60 or older",
+        "PNTS": "Prefer not to say"
+      }
+    },
+    {
+      "code": "CONCERN", "role": "measure", "type": "multi", "required": true, "group": "Your concerns",
+      "text": "Which of these are significant concerns for you? Select all that apply.",
+      "options": {
+        "JOBLOSS": "Income protection if I lose my job", "HEALTH": "Affording medical treatment or health insurance",
+        "PUBSVC": "Quality of public services relative to taxes paid", "TAXCOMP": "Complexity of tax compliance",
+        "RETIRE": "Retirement and old-age security", "COSTLIV": "Cost of living", "OTHER": "Something else"
+      }
+    },
+    {
+      "code": "BUFFER", "role": "distribution", "type": "list", "required": false, "group": "Your concerns",
+      "text": "If your main income stopped today, roughly how long could you cover essential expenses?",
+      "options": {
+        "LT1": "Less than 1 month", "M1": "1 to 3 months", "M3": "3 to 6 months", "M6": "More than 6 months",
+        "NS": "Not sure", "PNTS": "Prefer not to say"
+      }
+    },
+    {
+      "code": "HCOVER", "role": "distribution", "type": "list", "required": false, "group": "Your concerns",
+      "text": "Do you have health cover that would pay for a hospital stay?",
+      "options": {
+        "EMP": "Yes, through my employer", "PERS": "Yes, a policy I bought myself",
+        "GOVT": "Yes, a government scheme", "NONE": "No", "NS": "Not sure", "PNTS": "Prefer not to say"
+      }
+    },
+    {
+      "code": "PRIORITY", "role": "measure", "type": "multi", "required": false, "max_answers": 3, "group": "Priorities",
+      "text": "Which improvements would you prioritise? Choose up to three.",
+      "options": {
+        "UNEMP": "An unemployment insurance or income-support scheme", "HINS": "Wider health insurance coverage",
+        "OOP": "Lower out-of-pocket medical costs", "TAXSIMP": "Simpler tax filing and compliance",
+        "SPEND": "Clearer reporting of how taxes are spent",
+        "PUBSVC": "Better public services such as hospitals, schools and transport",
+        "PENSION": "Better pension and retirement provision", "OTHER": "Something else"
+      }
+    },
+    {
+      "code": "COMMENTS", "role": "private", "type": "text", "required": false, "group": "Priorities",
+      "text": "Is there anything else you would like to tell us? (optional)",
+      "help": "Please do not include names, phone numbers, email addresses, employer names or other details that could identify you or anyone else. Comments are never published word for word.",
+      "max_length": 1000
+    }
+  ]
+}
