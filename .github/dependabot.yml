@@ -1,0 +1,33 @@
+# Weekly dependency update PRs; CI tests each one. Minor and patch updates are
+# grouped per ecosystem to keep the number of PRs small.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /gate
+    schedule: { interval: weekly }
+    groups:
+      gate-python: { update-types: [minor, patch] }
+
+  - package-ecosystem: docker
+    directories: [/gate, /aggregator]
+    schedule: { interval: weekly }
+    groups:
+      base-images: { update-types: [minor, patch] }
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      compose-images: { update-types: [minor, patch] }
+
+  - package-ecosystem: terraform
+    directories: [/infra/terraform/staging, /infra/terraform/cloudflare]
+    schedule: { interval: weekly }
+    groups:
+      terraform-providers: { update-types: [minor, patch] }
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions: { update-types: [minor, patch] }

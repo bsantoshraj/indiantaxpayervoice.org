@@ -1,0 +1,14 @@
+# Never synced to the droplet (used by scripts/deploy-staging.sh and CI).
+# Excluded paths are also protected from rsync --delete on the droplet.
+.git
+.github
+.env
+var/
+node_modules
+.terraform/
+*.tfstate*
+terraform.tfvars
+__pycache__
+.pytest_cache
+public-stats
+survey-failure.png
