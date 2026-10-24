@@ -93,7 +93,7 @@ admin machine, which keeps 30 days.
 | Survey proxy after upstream containers get new IPs | Keeps working without a restart (tested by forcing a new IP) |
 | SEO output, all 14 pages (local) | Meta description, 10 Open Graph and 4 Twitter tags, one H1, `en-IN`; structured data on the home page; all 14 pages in the sitemap; no author sitemap |
 | shellcheck, Terraform fmt/validate, `nginx -t`, Caddy adapt, actionlint | Clean |
-| Responsive layout (14 pages × 7 widths) | 98/98, local, from Phase 0. **Not re-run since the content changes** |
+| Responsive layout (14 pages × 7 widths) | 98/98 PASS, re-run locally on 2026-10-24 after the content, SEO and map changes |
 | End-to-end survey submission | Passed locally; on staging in a desktop browser and on a phone through the gate |
 
 ## 5. Incidents and corrections
@@ -137,7 +137,7 @@ admin machine, which keeps 30 days.
 
 **Engineering**
 - [ ] Enable Cloudflare Web Analytics (beacon on the website only) once the token permission is added
-- [ ] Re-run the responsive check (14 pages × 7 widths) against staging after the content changes
+- [x] Re-run the responsive check (14 pages × 7 widths) after the content changes: 98/98 PASS (local)
 - [ ] Decide Turnstile on or off; if on, create keys in Terraform
 - [ ] Resolve LimeSurvey's outgoing-mail behaviour (decision 6)
 - [ ] Review the Dependabot PRs: #7 (DigitalOcean provider), #8 (nginx 1.31), #10 (altcha 2.3), #9 (MariaDB 11.8 → 13.0, a major version needing a local migration test)
