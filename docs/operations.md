@@ -106,6 +106,18 @@ data and the key stay in memory), requires a byte-identical re-dump, checks Word
 and the active survey, checks the set's `.env` holds all five LimeSurvey keys, and
 drops the scratch databases. Last run: PASS in about 2 seconds.
 
+## Deleting survey responses (retention)
+
+The privacy notice promises survey responses are kept **2 years from the close of
+their survey round**. Responses carry no dates, so deletion is per round:
+
+1. When a round closes, record its close date in the methodology page and in the
+   survey's LimeSurvey settings (expiry date).
+2. Two years later, delete that round's survey in the LimeSurvey admin (which deletes
+   its responses and comments), or replace it as described in ci-cd.md.
+3. Published statistics hold no personal data and can stay. Backups containing the
+   deleted responses expire within 14 days (server) and 30 days (admin copy).
+
 ## Rotating secrets
 
 ```bash
