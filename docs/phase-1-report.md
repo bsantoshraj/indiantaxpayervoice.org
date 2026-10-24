@@ -22,14 +22,14 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 | Define retention and consent practices | ◐ | Consent question in the survey. **Retention periods and deletion procedure not defined** |
 | Establish database backups and monitoring | ◐ | Backups done (below). **Monitoring and alerts deferred** to production (#5) |
 | Methodology, privacy and terms pages | ❌ | Pages exist as drafts. **Privacy and terms need legal review** |
-| Test the entire response-collection workflow | ◐ | A full browser submission through Cloudflare and the gate reached the published statistics. **Not yet done on a phone** |
+| Test the entire response-collection workflow | ◐ | One completed submission in a desktop browser through Cloudflare and the gate (response 3, 2026-10-24 morning) is counted in the published statistics. An owner test at 13:05 IST opened the survey from the LimeSurvey admin but **submitted no answers** (none reached the server). **Not yet done on a phone** |
 
 ## 2. Acceptance criteria (Phase 0 report §9)
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| A tester completes the survey on a phone over HTTPS through the gate | ❌ | Only a desktop browser so far |
-| The response appears in the statistics within 15 minutes | ✅ | Published 1 valid response on staging. The aggregator runs every 5 minutes and statistics are cached for 5; the smoke tests fail if statistics are older than 15 minutes |
+| A tester completes the survey on a phone over HTTPS through the gate | ❌ | Desktop browser only (response 3). The 13:05 IST attempt recorded no answers. Use the public link (`survey-staging…/index.php/735139`), not the admin's run/preview button, so the gate is part of the test |
+| The response appears in the statistics within 15 minutes | ✅ | Response 3 is published (`valid_responses = 1`). The aggregator runs every 5 minutes and statistics are cached for 5; the smoke tests fail if statistics are older than 15 minutes. Staging holds 2 responses: 1 completed, 1 abandoned (not counted) |
 | A database restore into a scratch database succeeds | ✅ | `restore-test.sh`: PASS on 5 consecutive runs (about 2 s), byte-identical re-dump |
 | Cloudflare and billing alerts are configured | ❌ | Deferred with monitoring (#5). **A billing alert is still required to close Phase 1** |
 | Legal sign-off on the privacy notice | ❌ | Draft outline only |
@@ -79,7 +79,7 @@ the admin machine.
 | Direct-to-origin admin requests with no, junk or unsigned tokens | 403 |
 | shellcheck, Terraform fmt/validate, `nginx -t`, actionlint | Clean |
 | Responsive layout (14 pages × 7 widths) | 98/98, local, from Phase 0. **Not re-run on staging** |
-| End-to-end survey submission | Passed locally (Phase 0) and in a desktop browser on staging. **Not yet on a phone** |
+| End-to-end survey submission | Passed locally (Phase 0) and once in a desktop browser on staging (response 3). The 13:05 IST owner attempt submitted no answers. **Not yet on a phone** |
 
 ## 5. Incidents and corrections
 
@@ -90,6 +90,7 @@ the admin machine.
 - **Deploys waited 5 minutes for no reason** after the admin lockdown, because they polled an admin URL that now returns 404. Fixed.
 - **Image builds on the droplet time out downloading from PyPI.** Images are now built in CI.
 - **Email addresses showed as "[email protected]"** without JavaScript (Cloudflare obfuscation). Turned off.
+- **Survey setting changed in the admin (2026-10-24, 13:06 IST):** Assessments was switched on. It has no rules, so respondents see no difference, but it no longer matches the survey as built from `survey/questionnaire-v1.json`. The survey is still active and anonymised, with no IP storage and no participant table. **Owner to confirm or revert.**
 
 ## 6. Decisions still needed from the owner
 
@@ -113,7 +114,8 @@ Carried over from Phase 0 §8, with today's status:
 - [ ] Write the website content (all 14 pages are drafts), especially methodology
 - [ ] Privacy notice and terms: legal review and sign-off. This needs decision 2
 - [ ] Define retention periods and the deletion procedure (survey responses, backups, logs, admin accounts)
-- [ ] Complete the survey on a phone over HTTPS through the gate, and confirm it appears in the statistics
+- [ ] Complete the survey on a phone over HTTPS through the gate, using the public link rather than the admin's run button, and confirm it appears in the statistics (response IDs and published counts are checked on the server)
+- [ ] Confirm or revert the Assessments setting switched on in the admin
 
 **Engineering**
 - [ ] Billing alert on the DigitalOcean account (part of #5; required by the acceptance criteria)
