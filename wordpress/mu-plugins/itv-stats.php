@@ -312,3 +312,46 @@ add_shortcode(
 		return $out . itv_stats_meta_note( $doc['meta'] );
 	}
 );
+
+/**
+ * Responses over time: weekly change in the published total (responses carry no
+ * dates). A table with a bar per week, so it is its own text alternative.
+ */
+add_shortcode(
+	'itv_trends',
+	function () {
+		$doc = itv_stats_fetch( 'trends' );
+		if ( ! $doc ) {
+			return itv_stats_unavailable();
+		}
+		$weeks = $doc['data']['weeks'] ?? array();
+		if ( ! $weeks ) {
+			return '<p role="status">' . esc_html__( 'Weekly figures will appear here after the first full week of responses.', 'itv' ) . '</p>' . itv_stats_meta_note( $doc['meta'] );
+		}
+		$max = 0;
+		foreach ( $weeks as $w ) {
+			$max = max( $max, (int) ( $w['new'] ?? 0 ) );
+		}
+		$out  = '<div class="itv-table-wrap" role="region" tabindex="0" aria-label="' . esc_attr__( 'Responses by week', 'itv' ) . '">';
+		$out .= '<table class="itv-table itv-trends"><caption>' . esc_html( $doc['data']['basis'] ?? '' ) . '</caption><thead><tr>';
+		$out .= '<th scope="col">' . esc_html__( 'Week starting', 'itv' ) . '</th><th scope="col">' . esc_html__( 'New responses', 'itv' ) . '</th><th scope="col">' . esc_html__( 'Total so far', 'itv' ) . '</th></tr></thead><tbody>';
+		foreach ( $weeks as $w ) {
+			$status = $w['status'] ?? 'suppressed';
+			$label  = date_i18n( 'j M Y', strtotime( $w['week_start'] . ' 00:00:00 UTC' ) );
+			if ( ! empty( $w['includes_earlier'] ) ) {
+				$label .= ' ' . __( '(includes earlier responses)', 'itv' );
+			}
+			if ( 'published' === $status ) {
+				$new  = (int) $w['new'];
+				$cell = '<span class="itv-bar" style="width:' . ( $max ? max( 2, round( 70 * $new / $max ) ) : 0 ) . '%" aria-hidden="true"></span>' . esc_html( number_format_i18n( $new ) );
+			} elseif ( 'none' === $status ) {
+				$cell = esc_html__( 'None', 'itv' );
+			} else {
+				$cell = esc_html__( 'Fewer than the minimum group size', 'itv' );
+			}
+			$out .= '<tr><th scope="row">' . esc_html( $label ) . '</th><td class="itv-trend-cell">' . $cell . '</td><td>' . esc_html( number_format_i18n( (int) $w['total'] ) ) . '</td></tr>';
+		}
+		$out .= '</tbody></table></div>';
+		return $out . itv_stats_meta_note( $doc['meta'] );
+	}
+);
