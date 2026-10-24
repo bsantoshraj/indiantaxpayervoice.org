@@ -8,6 +8,18 @@ ip="${1:?usage: deploy-staging.sh <droplet-ip>}"
 target="deploy@${ip}"
 ssh_opts=(-o StrictHostKeyChecking=accept-new)
 
+# Cloudflare Access settings for the LimeSurvey admin (not secret), from
+# infra/terraform/cloudflare. Without them the admin hostname refuses everyone.
+cf_tf=infra/terraform/cloudflare
+access_vars=()
+if [[ -f "$cf_tf/terraform.tfstate" ]]; then
+  out() { terraform -chdir="$cf_tf" output -raw "$1"; }
+  access_vars=("SURVEY_ADMIN_HOST=$(out staging_survey_admin_host)" "ITV_ACCESS_TEAM_DOMAIN=$(out access_team_domain)"
+               "ITV_ACCESS_AUD=$(out staging_survey_admin_aud)" "ITV_ACCESS_ALLOWED_EMAILS=$(out survey_admin_emails)")
+else
+  echo "Warning: no Cloudflare Terraform state; the LimeSurvey admin will refuse all requests." >&2
+fi
+
 echo "Waiting for cloud-init on ${ip}…"
 ssh "${ssh_opts[@]}" "$target" 'cloud-init status --wait >/dev/null; docker --version'
 
@@ -18,14 +30,18 @@ rsync -az --delete -e "ssh ${ssh_opts[*]}" \
   --exclude __pycache__ --exclude .pytest_cache --exclude public-stats \
   ./ "$target:/opt/itv/"
 
-ssh "${ssh_opts[@]}" "$target" bash -s -- "$ip" <<'REMOTE'
+ssh "${ssh_opts[@]}" "$target" bash -s -- "$ip" "${access_vars[@]}" <<'REMOTE'
 set -euo pipefail
-ip="$1"
+ip="$1"; shift
 cd /opt/itv
 if [[ ! -f .env ]]; then
   ./scripts/init-local-env.sh
   ./infra/staging/configure-env.sh "$ip"
 fi
+for kv in "$@"; do   # KEY=VALUE pairs (no secrets) from the deploy machine
+  key=${kv%%=*}; value=${kv#*=}
+  if grep -q "^$key=" .env; then sed -i "s#^$key=.*#$key=$value#" .env; else echo "$key=$value" >> .env; fi
+done
 sudo ./infra/staging/setup-host-db.sh
 command -v age >/dev/null || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq age >/dev/null
 sudo install -m 644 infra/staging/itv-backup.cron /etc/cron.d/itv-backup   # daily encrypted DB backup

@@ -25,6 +25,8 @@ set_var LS_DB_HOST host.docker.internal
 set_var WP_HOST "$wp_host"
 set_var SURVEY_HOST "$survey_host"
 set_var STATS_HOST "$stats_host"
+# LimeSurvey admin hostname (Cloudflare Access); only with a real, proxied domain.
+[[ -n "$domain" ]] && set_var SURVEY_ADMIN_HOST "survey-admin-staging.${domain}"
 set_var WP_URL "https://${wp_host}"
 set_var LS_PUBLIC_URL "https://${survey_host}"
 # A real domain is proxied by Cloudflare and uses its Origin CA certificate.
