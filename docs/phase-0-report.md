@@ -3,12 +3,15 @@
 *Prepared 2026-10-23 as the Phase 0 audit and plan. Sections 1–7 record the audit as it
 was; the status, decisions and plan below are kept current.*
 
-> **Status update, 2026-10-24.** Staging runs on DigitalOcean (`blr1`) behind
-> Cloudflare, deployed by CI/CD on every merge to `main`. Phase 1 is complete apart from
-> owner items (legal review, page content, Search Console, an analytics permission);
-> monitoring and alerting were moved out of Phase 1 by owner decision. Phase 2 has
-> started; the map style, chart approach and differencing protection are decided (§9).
-> Details: [Phase 1 report](phase-1-report.md), [how it works](how-it-works.md),
+> **Status update, 2026-10-24 (evening).** Staging runs on DigitalOcean (`blr1`) behind
+> Cloudflare, deployed by CI/CD on every merge to `main`.
+> **Phase 1:** complete except owner items (legal review, page content, Search Console,
+> an analytics permission); monitoring and alerting moved out by owner decision.
+> **Phase 2:** statistics API, differencing protection, tile-grid map and five heat maps
+> live on staging; trends, filters, a screen-reader test and the privacy review remain.
+> **Production:** being prepared on the same layout (owner request, 2026-10-24).
+> Details: [Phase 1 report](phase-1-report.md), [Phase 2 report](phase-2-report.md),
+> [owner backlog](owner-backlog.md), [how it works](how-it-works.md),
 > [operations](operations.md).
 
 This report covers the first deliverable in `claude.md` §14. Each finding is marked **[Verified]** (observed or tested in this environment) or **[Assumption]** (to be confirmed). Costs are planning estimates, not quotes.
@@ -269,18 +272,30 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - [ ] Publish to Spaces/CDN (only if production load needs it; Cloudflare already caches the static files)
 - **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression and rounding verified on synthetic data in staging; the map and charts pass keyboard and screen-reader checks. Status: [Phase 2 report](phase-2-report.md).
 
+### Production rollout (owner request, 2026-10-24)
+- [ ] QA on staging (test suites, smoke tests, restore test, responsive check against staging)
+- [ ] Production droplet and firewall (Terraform), same layout as staging
+- [ ] Cloudflare for production hosts without the staging prefix: DNS, Access, WAF, rate limiting, cache rules, `www` → apex redirect
+- [ ] CI/CD promotion: the images that passed staging are pulled from GHCR (no rebuild), deployed after owner approval
+- [ ] Production `.env`, backups, restore test and smoke tests
+- Open before real respondents are invited: legal review, privacy review (Phase 2), a methodologist's review; monitoring and alerting deferred by owner decision
+
 ### Phase 3 — Elasticity and resilience
 - [ ] Load tests (k6/Locust) for the Growth and Major-campaign profiles; measure LimeSurvey req/s per vCPU
 - [ ] Horizontal survey replicas behind the LB; shared gate store
-- [ ] Failure drills: DB failover, aggregator outage, restore from backup
+- [ ] Failure drills: DB failover, aggregator outage, restore from backup (*partly done: the backup restore test passes on staging in about 2 s*)
+- [x] Edge protection groundwork: Cloudflare cache rules, tiered cache, managed and custom WAF rules, edge rate limiting (Terraform)
 - **Acceptance:** the Growth profile sustains its target with p95 page time under 1.5 s and zero lost submissions; restore time measured and documented.
 
 ### Phase 4 — Growth and research operations
 - Search Console, consented analytics, campaign attribution, editorial workflow, quarterly privacy and security review.
+- *Groundwork done:* SEO metadata, sitemaps and structured data; cookieless analytics code (needs a token permission); Search Console instructions (needs the owner's verification code); Dependabot weekly update PRs; CI/CD with smoke tests; secret scanning with push protection.
 
 ---
 
 ## Verified test results at the time of writing
+
+*These are the Phase 0 results (2026-10-23). Current results: [Phase 1 report §4](phase-1-report.md), [Phase 2 report §5](phase-2-report.md).*
 
 | Suite | Result |
 |---|---|
