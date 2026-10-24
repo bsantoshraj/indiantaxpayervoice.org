@@ -59,6 +59,18 @@ LimeSurvey) before merging, and merge one at a time so a failed deploy points at
 change. Terraform provider updates also need `terraform init -upgrade` and a plan on
 the admin machine (CI does not apply Terraform).
 
+## Survey changes
+
+Each deploy compares the SHA-256 of `survey/questionnaire-v1.json` with
+`ITV_LS_SURVEY_HASH` in the droplet's `.env` (recorded when its survey was built).
+If they differ, **on staging** the deploy replaces the survey from the JSON (new
+survey ID, test responses deleted), republishes the statistics from the empty survey
+(`--allow-drop`), and the cache purge refreshes pages that link to it. **In any other
+environment the deploy fails instead**: a survey with real responses needs a planned
+migration (export, archive, announce), never an automatic replacement. Settings
+changed by hand in the LimeSurvey admin are lost on replacement; put lasting changes
+in the JSON.
+
 ## Secrets and trust
 
 | Name | Kind | What it is |

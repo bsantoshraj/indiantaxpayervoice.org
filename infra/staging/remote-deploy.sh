@@ -49,9 +49,28 @@ fi
 echo "Waiting for LimeSurvey…"   # the public proxy serves / ; admin routes are refused there
 for _ in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8081/ && break; sleep 5; done
 set -a; . ./.env; set +a
-[[ -n "${ITV_LS_SURVEY_ID:-}" ]] || ./scripts/setup-local-survey.sh
+# The survey is built from survey/questionnaire-v1.json. LimeSurvey cannot change
+# answer options or questions of an active survey, so a changed questionnaire means
+# replacing the survey, which deletes its responses: automatic on staging (test
+# data only), refused anywhere else.
+survey_hash=$(sha256sum survey/questionnaire-v1.json | cut -c1-64)
+survey_replaced=0
+if [[ -z "${ITV_LS_SURVEY_ID:-}" ]]; then
+  ./scripts/setup-local-survey.sh; survey_replaced=1
+elif [[ "${ITV_LS_SURVEY_HASH:-}" != "$survey_hash" ]]; then
+  if [[ "${ITV_ENV:-}" != "staging" ]]; then
+    echo "The questionnaire changed, but replacing the survey would delete its responses in ${ITV_ENV:-this environment}. Plan a migration; not replacing." >&2
+    exit 1
+  fi
+  echo "Questionnaire changed: replacing staging survey ${ITV_LS_SURVEY_ID} (its test responses are deleted)…"
+  ./scripts/setup-local-survey.sh; survey_replaced=1
+fi
 set -a; . ./.env; set +a
 docker compose up -d --no-build   # pick up ITV_LS_SURVEY_ID
 ./scripts/sync-limesurvey-settings.sh
+if (( survey_replaced )); then
+  # The new survey starts empty; publish that instead of keeping the old counts.
+  docker compose run --rm aggregator --allow-drop 2>&1 | grep -E "INFO rows|ERROR" | sed 's/.*INFO //' || true
+fi
 docker compose run --rm wpcli bash /bootstrap.sh | tail -1
 docker compose ps --format '{{.Service}}: {{.Status}}'

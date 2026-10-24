@@ -270,7 +270,7 @@ Potential questions:
 
 *Added after initial scoping, at the owner's request:* income and gender may influence which concerns people report, so the questionnaire also includes these optional demographic questions. Each uses broad bands and offers "Prefer not to say":
 
-- Annual individual income band, before tax, using broad ranges aligned to tax thresholds (currently up to ₹4 lakh, ₹4–12 lakh, ₹12–24 lakh, and above ₹24 lakh). Re-check the bands against the slabs in force before each survey version.
+- Annual individual income band, before tax, using broad ranges aligned to tax thresholds (currently up to ₹4 lakh, ₹4–12 lakh, ₹12–24 lakh, ₹24–50 lakh, ₹50 lakh–₹1 crore, and above ₹1 crore; ₹50 lakh and ₹1 crore are the income-tax surcharge thresholds, added at the owner's request on 2026-10-24). Re-check the bands against the slabs in force before each survey version.
 - Gender: woman, man, another gender identity, or prefer not to say.
 - Age band.
 - Employment type, such as salaried private, salaried government, self-employed, or contract/gig. This bears directly on job-loss protection.

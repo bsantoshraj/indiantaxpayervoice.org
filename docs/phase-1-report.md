@@ -22,14 +22,14 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 | Define retention and consent practices | ◐ | Consent question in the survey. **Retention periods and deletion procedure not defined** |
 | Establish database backups and monitoring | ◐ | Backups done (below). **Monitoring and alerts deferred** to production (#5) |
 | Methodology, privacy and terms pages | ❌ | Pages exist as drafts. **Privacy and terms need legal review** |
-| Test the entire response-collection workflow | ◐ | One completed submission in a desktop browser through Cloudflare and the gate (response 3, 2026-10-24 morning) is counted in the published statistics. An owner test at 13:05 IST opened the survey from the LimeSurvey admin but **submitted no answers** (none reached the server). **Not yet done on a phone** |
+| Test the entire response-collection workflow | ✅ | Completed on a phone through Cloudflare and the gate (response 5, 2026-10-24 14:13–14:15 IST) and in a desktop browser (response 3, morning). Both are counted in the published statistics |
 
 ## 2. Acceptance criteria (Phase 0 report §9)
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| A tester completes the survey on a phone over HTTPS through the gate | ❌ | Desktop browser only (response 3). The 13:05 IST attempt recorded no answers. Use the public link (`survey-staging…/index.php/735139`), not the admin's run/preview button, so the gate is part of the test |
-| The response appears in the statistics within 15 minutes | ✅ | Response 3 is published (`valid_responses = 1`). The aggregator runs every 5 minutes and statistics are cached for 5; the smoke tests fail if statistics are older than 15 minutes. Staging holds 2 responses: 1 completed, 1 abandoned (not counted) |
+| A tester completes the survey on a phone over HTTPS through the gate | ✅ | Response 5, 2026-10-24: public link at 14:13:56 IST; the phone solved the bot check in about 3 s (`/gate/verify` 303); 5 answer pages submitted by 14:14:59 IST |
+| The response appears in the statistics within 15 minutes | ✅ | Response 5 reached the public statistics **2 min 32 s** after submission, as seen by a visitor through Cloudflare (`valid_responses` 1 → 2). The smoke tests fail if statistics are ever older than 15 minutes |
 | A database restore into a scratch database succeeds | ✅ | `restore-test.sh`: PASS on 5 consecutive runs (about 2 s), byte-identical re-dump |
 | Cloudflare and billing alerts are configured | ❌ | Deferred with monitoring (#5). **A billing alert is still required to close Phase 1** |
 | Legal sign-off on the privacy notice | ❌ | Draft outline only |
@@ -79,7 +79,7 @@ the admin machine.
 | Direct-to-origin admin requests with no, junk or unsigned tokens | 403 |
 | shellcheck, Terraform fmt/validate, `nginx -t`, actionlint | Clean |
 | Responsive layout (14 pages × 7 widths) | 98/98, local, from Phase 0. **Not re-run on staging** |
-| End-to-end survey submission | Passed locally (Phase 0) and once in a desktop browser on staging (response 3). The 13:05 IST owner attempt submitted no answers. **Not yet on a phone** |
+| End-to-end survey submission | Passed locally (Phase 0); on staging in a desktop browser (response 3) and on a phone through the gate (response 5) |
 
 ## 5. Incidents and corrections
 
@@ -114,7 +114,7 @@ Carried over from Phase 0 §8, with today's status:
 - [ ] Write the website content (all 14 pages are drafts), especially methodology
 - [ ] Privacy notice and terms: legal review and sign-off. This needs decision 2
 - [ ] Define retention periods and the deletion procedure (survey responses, backups, logs, admin accounts)
-- [ ] Complete the survey on a phone over HTTPS through the gate, using the public link rather than the admin's run button, and confirm it appears in the statistics (response IDs and published counts are checked on the server)
+- [x] Complete the survey on a phone over HTTPS through the gate, and confirm it appears in the statistics (response 5, 2 min 32 s)
 - [ ] Confirm or revert the Assessments setting switched on in the admin
 
 **Engineering**

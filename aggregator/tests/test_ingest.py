@@ -119,3 +119,10 @@ def test_semicolon_export_as_produced_by_limesurvey(schema):
 def test_limesurvey_anonymised_placeholder_date_becomes_unknown(schema):
     responses, report = parse_export_text(make_export(schema, [{"submitdate": "1980-01-01 00:00:00"}]), schema)
     assert report.valid == 1 and responses[0].submit_date is None
+
+
+def test_new_income_codes_are_accepted(schema):
+    rows = [{"INCOME": "B5"}, {"INCOME": "B6"}]
+    responses, report = parse_export_text(make_export(schema, rows), schema)
+    assert report.valid == 2 and report.invalid_answer == 0
+    assert sorted(r.answers["INCOME"] for r in responses) == ["B5", "B6"]

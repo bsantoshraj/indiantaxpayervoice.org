@@ -52,7 +52,9 @@
       "help": "Broad ranges only. We never ask for your exact income.",
       "options": {
         "B1": "Up to ₹4 lakh", "B2": "₹4 lakh to ₹12 lakh", "B3": "₹12 lakh to ₹24 lakh",
-        "B4": "Above ₹24 lakh", "PNTS": "Prefer not to say"
+        "B4": "₹24 lakh to ₹50 lakh",
+      "B5": "₹50 lakh to ₹1 crore",
+      "B6": "Above ₹1 crore", "PNTS": "Prefer not to say"
       }
     },
     {
