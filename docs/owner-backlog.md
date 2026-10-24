@@ -43,7 +43,7 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 
 | # | Item | What is needed |
 |---|---|---|
-| 16 | **Open the survey (controlled release)** | When ready: a pull request setting `ITV_SURVEY_OPEN=1` in `infra/env/production.env`, then approve the production deployment ([environments.md](environments.md#opening-the-production-survey-controlled-release)) |
+| 16 | **Survey controlled release** | Opened 2026-10-24 (PR #33). To close it again: `ITV_SURVEY_OPEN=0` in `infra/env/production.env`, then promote and approve ([ci-cd.md](ci-cd.md#open-or-close-the-production-survey-controlled-release)) |
 | 17 | **Approve production deployments** | Each "Run workflow → production" waits for your approval in GitHub |
 
 ## Deferred by owner decision
@@ -51,6 +51,8 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 - Monitoring and alerting, including the billing alert: until production work starts (#5).
 
 ## Done
+
+- 2026-10-24: production live on indiantaxpayervoice.org; survey opened by controlled release (before the legal, privacy and methodologist reviews, by owner decision).
 
 - 2026-10-24: survey-response retention set to 2 years from the close of each round.
 - 2026-10-24: income bands extended (₹24–50 lakh, ₹50 lakh–₹1 crore, above ₹1 crore).
