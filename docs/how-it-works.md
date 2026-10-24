@@ -61,7 +61,7 @@ flowchart LR
 Cloudflare serves cached pages to anonymous visitors (up to 10 minutes old; every
 deploy purges the cache). Logged-in editors, `/wp-admin`, `/wp-login.php`, the REST
 API and previews always reach WordPress. Statistics shown on pages
-(`[itv_counters]`, `[itv_state_map]` tile-grid map, `[itv_states_table]`, `[itv_heatmap]` concern heat maps by sector, income, gender, age and employment) are fetched **server-side** from the
+(`[itv_counters]`, `[itv_state_map]` tile-grid map, `[itv_states_table]`, `[itv_heatmap]` concern heat maps by sector, income, gender, age and employment, `[itv_trends]` weekly responses) are fetched **server-side** from the
 statistics server and cached for 60 seconds; if they are unavailable the page says
 so instead of showing a misleading zero.
 
@@ -104,6 +104,9 @@ anything is published:
 - published counts are rounded to the nearest 5 and percentages are whole numbers from the
   rounded figures; with hourly releases this limits working out one response by
   comparing consecutive releases (differencing).
+- trends never use response times (the survey records none): each release records the day's
+  published, already-rounded total in `/srv/stats/history` (not public), and the weekly trend is
+  the change in that total; weeks with fewer than 20 new responses are hidden.
 
 A run that looks wrong (missing columns, LimeSurvey unreachable, valid responses
 falling by more than 10 %) **keeps the previous release**. Releases are written to a

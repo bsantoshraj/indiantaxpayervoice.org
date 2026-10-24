@@ -2,7 +2,7 @@
 
 **Status on 2026-10-24:** the aggregation pipeline, the public statistics API, the
 differencing protection, the tile-grid state/UT map and five concern heat maps are
-built and live on staging. **Phase 2 is not complete:** trends over time, filters and
+built and live on staging, and weekly trends are built. **Phase 2 is not complete:** filters and
 tooltips for the heat maps, a manual screen-reader check, and the privacy review
 before launch remain. See [Remaining work](#6-remaining-work-to-close-phase-2).
 
@@ -19,7 +19,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 | Controlled LimeSurvey integration | ✅ | RemoteControl API, called over the internal network by a `stats-exporter` account that can only export this one survey. No public route to raw data |
 | Precomputed aggregate statistics | ✅ | Hourly aggregator: validation, dedupe, small-group suppression (k = 20) with complementary suppression, rounding, atomic publish; a suspicious drop keeps the previous release |
 | Public statistics API / static publishing | ✅ | `stats-staging…/v1/statistics/{summary, states, industries, breakdowns, distributions, trends}` and `states.csv`; read-only (WAF allows only GET/HEAD), cached by Cloudflare per the origin's headers |
-| Public counters and heat maps | ◐ | Counters ✅, tile-grid map ✅, heat maps by sector, income, gender, age and employment ✅. Trends ❌ |
+| Public counters and heat maps | ✅ | Counters, tile-grid map, heat maps by sector, income, gender, age and employment, and weekly trends |
 | Suppression and privacy tests | ✅ | 61 aggregator tests, including synthetic-data tests for rounding and differencing |
 | Metric definitions and refresh intervals | ✅ | Methodology page: counting rules, suppression, rounding, hourly refresh, limitations, corrections |
 
@@ -71,7 +71,7 @@ insufficient data is a requirement; hourly releases blur when it happened.
 
 ## 6. Remaining work to close Phase 2
 
-- [ ] **Trends over time** from the change in totals between releases (responses carry no dates), with the same suppression and rounding
+- [x] **Trends over time**: weekly change in the published (rounded) total between releases; weeks under 20 new responses hidden; a falling total starts a new series; history kept outside the published release (`[itv_trends]`, 6 tests)
 - [ ] **Heat-map filters** (for example, choose a question or concern) as progressive enhancement, without creating new cross-tabulations
 - [ ] **Manual screen-reader test** of the map and heat maps (NVDA on Windows or TalkBack on Android)
 - [ ] **Privacy review before launch** (brief §8): minimum group size, rounding, the zero-versus-hidden signal, and the free-text comments, ideally by someone independent

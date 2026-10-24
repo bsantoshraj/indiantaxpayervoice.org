@@ -161,3 +161,7 @@ Text Domain: itv
 .itv-heatmap td.itv-heat--none { background: #fff; color: #56656F; font-weight: 400; }
 .itv-heatmap tbody th { font-weight: 600; min-width: 7rem; }
 .itv-heatmap thead th, .itv-heatmap td:nth-child(2) { padding-left: .45rem; padding-right: .45rem; }
+
+/* Responses over time ([itv_trends]): a bar behind each weekly figure. */
+.itv-trends .itv-trend-cell { position: relative; min-width: 12rem; font-variant-numeric: tabular-nums; }
+.itv-bar { display: inline-block; height: .8em; margin-right: .5rem; vertical-align: middle; border-radius: 3px; background: #167A73; }   /* width: up to 70% of the cell, proportional */
