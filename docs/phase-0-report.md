@@ -18,7 +18,7 @@ This report covers the first deliverable in `claude.md` §14. Each finding is ma
 | Analytics | None configured. | [Verified] |
 | Local tooling | Docker 29.4, Compose 5.1, Python 3.12, Node 20, Terraform 1.9.8, doctl 1.115 and gh are available. | [Verified] |
 
-**Built locally since the audit (Phase 1/2 groundwork, local only):** a Docker Compose stack with WordPress 7.1.3, LimeSurvey 6.17.18 and two MariaDB 11.8 databases; a custom theme; the v1 questionnaire; the aggregator; static statistics publishing; and the survey gate. Details are in §9.
+**Built locally since the audit (Phase 1/2 groundwork, local only):** a Docker Compose stack with WordPress 7.1.3, LimeSurvey 7.5.1 (upgraded from 6.17.18, which its admin UI reports as out of support) and two MariaDB 11.8 databases; a custom theme; the v1 questionnaire; the aggregator; static statistics publishing; and the survey gate. Details are in §9.
 
 ---
 
@@ -73,7 +73,7 @@ Alternatives considered: DO App Platform for WordPress (rejected for now because
 | WordPress | `wordpress:7.1.3-php8.3-apache` + child theme + must-use plugin (always loaded) | Droplet (Docker Compose), full-page cache, media on Spaces, `DISALLOW_FILE_EDIT`, admin MFA, admin restricted by Cloudflare Access |
 | WP database | MariaDB 11.8 container | DB on the WP droplet (pilot), or managed MySQL from the Growth scenario |
 | Survey proxy + gate | nginx 1.30.6 + `gate/` (ALTCHA 3.2.4 / altcha-py 2.2.0) | On every survey droplet; gate **always on** (refuses to start disabled) |
-| LimeSurvey | `martialblog/limesurvey:6.17.18-261021-apache`, DB sessions, encryption keys from env | Same image, 1..N droplets behind LB; `/admin` reachable only via Cloudflare Access/VPN |
+| LimeSurvey | `martialblog/limesurvey:7.5.1-261021-apache` (PHP 8.4), DB sessions, encryption keys from env | Same image, 1..N droplets behind LB; `/admin` reachable only via Cloudflare Access/VPN |
 | Survey database | MariaDB 11.8 container, internal network | DO Managed MySQL 8, private VPC, trusted sources = survey droplets + aggregator only |
 | Aggregator | `aggregator/`, 5-minute loop container | Cron on a small droplet (or App Platform job), publishing to Spaces |
 | Stats hosting | nginx serving a volume | Spaces bucket + CDN, `Cache-Control: max-age=300` |
@@ -85,8 +85,10 @@ Alternatives considered: DO App Platform for WordPress (rejected for now because
 
 ## 4. LimeSurvey hosting model and persistent storage
 
-- **Edition:** LimeSurvey Community Edition 6.x (6.17.18 locally), licensed **GPL-2.0-or-later** [Verified: LICENSE in image]. Self-hosting unmodified is permitted. If we modify LimeSurvey and *distribute* it, GPL obligations apply; we currently make no code changes, and the gate is a separate service.
-- **Runtime:** PHP 8.3, Apache [Verified]. Supported databases: MySQL/MariaDB, PostgreSQL and MSSQL. Recommendation: **DO Managed MySQL 8** (InnoDB).
+- **Edition:** LimeSurvey Community Edition **7.x** (7.5.1 locally), licensed **GPL-2.0-or-later** [Verified: LICENSE in image]. *Correction:* this report originally proposed 6.x; the LimeSurvey 6 admin UI states that version 6 is out of support, so the stack was upgraded to 7.5.1 on 2026-10-23. The DB migrated from schema 651 to 717 with no data loss [Verified: the existing response was preserved and exported].
+- **Upgrade notes found during 6 → 7:** the response table is renamed `lime_responses_<sid>` (was `lime_survey_<sid>`); survey pages now change without a full page reload; checkbox field names use internal IDs (`Q35_S40`). The export API and code headings are unchanged, so the aggregator needed no change for these.
+- **Upgrade step learned the hard way:** after a major upgrade, **clear the `lime_sessions` table**. Sessions started before the upgrade still reference the old column names, and a respondent resuming one gets a 500 error on their next page [Verified locally 2026-10-23]. In production, schedule major upgrades in a maintenance window with the survey paused. Self-hosting unmodified is permitted. If we modify LimeSurvey and *distribute* it, GPL obligations apply; we currently make no code changes, and the gate is a separate service.
+- **Runtime:** PHP 8.4, Apache [Verified]. Supported databases: MySQL/MariaDB, PostgreSQL and MSSQL. Recommendation: **DO Managed MySQL 8** (InnoDB).
 - **Persistent state and how each is handled:**
 
 | State | Where | Multi-replica handling |
@@ -195,6 +197,13 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 6. Email provider for administration notifications. LimeSurvey's default "your answers were emailed" error text must be fixed or email configured.
 7. Quality-flag rules after the pilot (speeder threshold, bursts).
 8. A methodologist's review of the question set and income bands (re-check against the tax slabs in force).
+9. **Survey timestamps.** In LimeSurvey 7, an anonymised survey stores every date as `1980-01-01` [Verified 2026-10-23]. As a result:
+   - Weekly trends cannot come from response dates. The aggregator now reports such responses as `date_not_recorded` and never invents a date.
+   - The "completed implausibly fast" quality flag (claude.md §4F) is not possible without durations.
+
+   The options are:
+   - **(a)** Keep anonymisation (recommended). It is also what keeps one-time invitation links unlinkable if stuffing ever forces that escalation. Derive daily or weekly trends from the change in the total between scheduled aggregator runs, and evaluate LimeSurvey's `savetimings` (per-page durations, not timestamps) for speeder detection.
+   - **(b)** Turn anonymisation off while still storing no tokens or IP addresses. This gives real dates, but weakens that guarantee.
 
 **Key risks**
 - **Selection bias** is inherent: the results cannot represent all taxpayers. Mitigated by honest labelling everywhere [Built].
@@ -222,12 +231,12 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 | Bot gate + rate limits (on in staging/prod; off locally) | ✅ built, 21 tests | ☐ verify in browser over HTTPS |
 | End-to-end survey submission test (`tests/e2e`) | ✅ passing | ☐ |
 | Domain, TLS, Cloudflare WAF | — | ☐ |
-| Backups + restore test, monitoring, billing alerts | — | ☐ |
+| Backups + restore test (staging: daily age-encrypted dumps; restore test PASS 2026-10-24, 2 s, byte-identical; off-droplet copy pending), monitoring, billing alerts | — | ◐ |
 | Privacy notice, terms, methodology reviewed (legal + editorial) | drafts | ☐ |
 - **Acceptance:** on staging, a tester completes the survey on a phone over HTTPS through the gate; the response appears in the statistics within 15 minutes; a DB restore into a scratch DB succeeds; Cloudflare and billing alerts are configured; legal sign-off on the privacy notice.
 
 ### Phase 2 — Aggregation and public statistics
-- [x] Aggregator with validation, dedupe, suppression, atomic publish (53 tests)
+- [x] Aggregator with validation, dedupe, suppression, atomic publish (55 tests)
 - [x] Counters + state table in WordPress (honest zero and suppressed states)
 - [ ] Accessible India map (licensed, Survey-of-India-compliant boundaries) with a table alternative
 - [ ] Industry × concern heat map and demographic breakdown charts
@@ -249,8 +258,8 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 
 | Suite | Result |
 |---|---|
-| Aggregator (`aggregator/tests`) | **53 passed** |
+| Aggregator (`aggregator/tests`) | **55 passed** |
 | Gate (`gate/tests`, run in `python:3.12-slim`) | **21 passed** |
 | Responsive check (`tests/responsive`, 14 pages × 7 widths) | **PASS, 98/98** |
-| End-to-end survey submission (`tests/e2e`, local, gate off) | **PASS** |
+| End-to-end survey submission (`tests/e2e`, local, gate off) | **PASS** on LimeSurvey 7.5.1 |
 | Gate in a real browser, HTTPS, full flow | **Not yet run.** The widget was verified solving a challenge in a secure context; the full flow will be confirmed in staging. |

@@ -1,0 +1,3 @@
+# Installed to /etc/cron.d/itv-backup by scripts/deploy-staging.sh.
+# Daily encrypted database backup at 02:17 UTC (07:47 IST).
+17 2 * * * root /opt/itv/infra/staging/backup-db.sh >> /var/log/itv-backup.log 2>&1

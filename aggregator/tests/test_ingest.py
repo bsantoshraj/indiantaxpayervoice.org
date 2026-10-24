@@ -114,3 +114,8 @@ def test_semicolon_export_as_produced_by_limesurvey(schema):
     csv.writer(buf, delimiter=";", quoting=csv.QUOTE_ALL, lineterminator="\n").writerows(rows)
     responses, report = parse_export_text(buf.getvalue(), schema)
     assert report.valid == 2 and {r.state for r in responses} == {"KA", "GA"}
+
+
+def test_limesurvey_anonymised_placeholder_date_becomes_unknown(schema):
+    responses, report = parse_export_text(make_export(schema, [{"submitdate": "1980-01-01 00:00:00"}]), schema)
+    assert report.valid == 1 and responses[0].submit_date is None

@@ -155,3 +155,10 @@ def test_distributions_partition_and_multi_select(schema):
     assert buffer["NA"]["status"] == NONE
     assert set(dist) == {"BUFFER", "HCOVER", "PRIORITY"}
     assert "up to 3" in dist["PRIORITY"]["note"]
+
+
+def test_withheld_dates_are_not_published_as_a_week(schema):
+    rs = [resp(1, d=date(2026, 11, 2)), resp(2, d=None), resp(3, d=None)]
+    trends = aggregate(rs, schema, Policy(K))["trends"]
+    assert trends["weeks"] == [{"week_start": "2026-11-02", "count": 1}]
+    assert trends["date_not_recorded"] == 2

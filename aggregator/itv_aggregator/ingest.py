@@ -15,6 +15,10 @@ from typing import TextIO
 from .schema import CONCERN, INDUSTRY, NOT_ANSWERED, STATE, Schema
 
 
+# LimeSurvey 7 stores this placeholder for every date in anonymised surveys.
+ANONYMISED_DATE = date(1980, 1, 1)
+
+
 class IngestError(Exception):
     """The export as a whole cannot be trusted; nothing should be published."""
 
@@ -28,7 +32,7 @@ class Limits:
 @dataclass(frozen=True)
 class Response:
     response_id: str
-    submit_date: date
+    submit_date: date | None  # None when LimeSurvey withheld the date (anonymised survey)
     answers: dict[str, str] = field(hash=False)  # single-choice code -> option (or NA)
     selections: dict[str, frozenset[str]] = field(hash=False)  # multi-choice code -> options
 
@@ -126,6 +130,8 @@ def _validate_row(row: dict[str, str], schema: Schema, report: IngestReport) -> 
     if submit is None:
         report.invalid_date += 1
         return None
+    if submit == ANONYMISED_DATE:
+        submit = None
     if (row.get(schema.consent_code) or "").strip() != "Y":
         report.no_consent += 1
         return None

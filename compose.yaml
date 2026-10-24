@@ -17,8 +17,10 @@ x-restart: &restart
   restart: unless-stopped
 
 services:
+  # Local only (profile "localdb"); staging runs MariaDB on the host instead.
   wp-db:
     <<: *restart
+    profiles: [localdb]
     image: mariadb:11.8.9
     environment:
       MARIADB_DATABASE: ${WP_DB_NAME}
@@ -38,14 +40,17 @@ services:
     <<: *restart
     image: wordpress:7.1.3-php8.3-apache
     depends_on:
-      wp-db: { condition: service_healthy }
+      wp-db: { condition: service_healthy, required: false }
+    extra_hosts: ["host.docker.internal:host-gateway"]
     environment:
-      WORDPRESS_DB_HOST: wp-db
+      WORDPRESS_DB_HOST: ${WP_DB_HOST:-wp-db}
       WORDPRESS_DB_NAME: ${WP_DB_NAME}
       WORDPRESS_DB_USER: ${WP_DB_USER}
       WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
       WORDPRESS_CONFIG_EXTRA: |
         define('DISALLOW_FILE_EDIT', true);
+        // Behind the HTTPS proxy (staging/production); WordPress is not reachable directly.
+        if (($$_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') { $$_SERVER['HTTPS'] = 'on'; }
         define('WP_AUTO_UPDATE_CORE', 'minor');
         # Server-side fetch of public aggregates only (a CDN URL in production).
         define('ITV_STATS_BASE_URL', 'http://stats:8080/v1/statistics');
@@ -62,8 +67,9 @@ services:
     profiles: [tools]
     user: "33:33"
     depends_on: [wordpress]
+    extra_hosts: ["host.docker.internal:host-gateway"]
     environment:
-      WORDPRESS_DB_HOST: wp-db
+      WORDPRESS_DB_HOST: ${WP_DB_HOST:-wp-db}
       WORDPRESS_DB_NAME: ${WP_DB_NAME}
       WORDPRESS_DB_USER: ${WP_DB_USER}
       WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
@@ -83,6 +89,7 @@ services:
 
   ls-db:
     <<: *restart
+    profiles: [localdb]
     image: mariadb:11.8.9
     environment:
       MARIADB_DATABASE: ${LS_DB_NAME}
@@ -101,12 +108,13 @@ services:
 
   limesurvey:
     <<: *restart
-    image: martialblog/limesurvey:6.17.18-261021-apache
+    image: martialblog/limesurvey:7.5.1-261021-apache
     depends_on:
-      ls-db: { condition: service_healthy }
+      ls-db: { condition: service_healthy, required: false }
+    extra_hosts: ["host.docker.internal:host-gateway"]
     environment:
       DB_TYPE: mysql
-      DB_HOST: ls-db
+      DB_HOST: ${LS_DB_HOST:-ls-db}
       DB_NAME: ${LS_DB_NAME}
       DB_USERNAME: ${LS_DB_USER}
       DB_PASSWORD: ${LS_DB_PASSWORD}
@@ -179,6 +187,9 @@ services:
   # this is a scheduled job (cron / App Platform job), not a long-lived loop.
   aggregator-cron:
     <<: *restart
+    build:
+      context: .
+      dockerfile: aggregator/Dockerfile
     image: itv-aggregator:local
     depends_on: [limesurvey]
     entrypoint: ["sh", "-c", "while true; do python -m itv_aggregator; sleep 300; done"]
