@@ -4,8 +4,7 @@
 deployed automatically, and the survey has been tested end to end on a phone. The
 website pages are published without draft notices, and methodology, privacy and terms
 describe what the system actually does. **What remains is mostly owner work:** formal
-legal review, a retention period for survey responses, fuller research content, and
-two small account steps for analytics. See
+legal review, fuller research content, and two small account steps for analytics. See
 [Remaining work](#7-remaining-work-to-close-phase-1).
 
 Phase 1 in [`claude.md`](../claude.md) §12 is "Secure public website and survey pilot".
@@ -22,7 +21,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done · — out of 
 | Deploy and harden LimeSurvey | ✅ | LimeSurvey 7.5.1, anonymised (no IP, no tokens, no dates), behind the proof-of-work gate and rate limits at the edge and origin. Admin only on its own Cloudflare Access hostname, token re-verified at the origin; admin routes blocked on the public host by the WAF (403) and nginx (404) |
 | Domain, TLS and CDN/WAF | ✅ | Full (strict) TLS with an Origin CA certificate, minimum TLS 1.2, Always Use HTTPS; origin accepts HTTPS from Cloudflare only. Cache rules and tiered cache; Cloudflare Managed Free Ruleset and custom WAF rules; edge rate limiting on survey submissions. All in Terraform |
 | Build the first questionnaire | ✅ | v1: consent plus 11 questions (3 required). Income bands extended on 2026-10-24 to ₹24–50 lakh, ₹50 lakh–₹1 crore and above ₹1 crore (surcharge thresholds); the pipeline rebuilt the staging survey from the JSON |
-| Define retention and consent practices | ◐ | Consent (18+, privacy notice, aggregate use) in the survey. Retention published in the privacy notice for backups (14 days server, 30 days copy), logs (size-rotated) and email. **Survey-response retention period not yet decided** |
+| Define retention and consent practices | ✅ | Consent (18+, privacy notice, aggregate use) in the survey. Retention published in the privacy notice: survey responses 2 years from the close of their round, backups 14 days (server) and 30 days (copy), logs size-rotated, emails until dealt with. Deletion procedure in operations.md |
 | Establish database backups and monitoring | ✅ / — | Backups ✅ (below). Monitoring and alerting — **out of Phase 1 scope by owner decision**; tracked in #5 |
 | Methodology, privacy and terms pages | ◐ | Written to match the system (anonymity, what is and is not collected, cookies, logs, processors, retention, DPDP Act rights, corrections). **Formal legal review not done** |
 | Test the entire response-collection workflow | ✅ | Completed on a phone through Cloudflare and the gate, and in a desktop browser; both reached the published statistics |
@@ -125,14 +124,13 @@ admin machine, which keeps 30 days.
 | 7 | Quality-flag rules (speeders, bursts) | **Open**, after the pilot |
 | 8 | Methodologist review of questions and income bands | **Open** (bands extended at the owner's request) |
 | 9 | Survey timestamps | **Open.** Recommendation stands: keep anonymisation; trends from run-to-run totals (not built yet) |
-| 10 | Survey-response retention period | **Open.** The privacy notice promises a fixed deletion date per survey round before it opens to the public |
+| 10 | Survey-response retention period | **Decided:** 2 years from the close of each survey round (published in the privacy notice) |
 | 11 | Production canonical hostname | Apex `indiantaxpayervoice.org`, with `www` redirecting (recommended, adopted for SEO defaults) |
 
 ## 7. Remaining work to close Phase 1
 
 **Owner / editorial / legal**
 - [ ] Formal legal review of the privacy notice and terms, and decision 2 (who is responsible)
-- [ ] Decide the survey-response retention period (decision 10) and add it to the privacy notice
 - [ ] Fuller content for the research and topic pages (job loss, health, public spending, research, mission, FAQ)
 - [ ] Search Console: create the property and send the DNS verification code (it goes into Cloudflare via Terraform)
 - [ ] Cloudflare token: add *Account › Account Web Analytics › Edit* so cookieless page-view analytics can be switched on
