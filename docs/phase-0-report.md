@@ -267,7 +267,7 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - [x] **Differencing protection**: hourly releases, counts rounded to the nearest 5, whole percentages from rounded figures; synthetic-data tests (#26)
 - [x] **Accessible state/UT map**: tile-grid map (`[itv_state_map]`), one equal tile per state/UT, no boundaries; each tile focusable with a tooltip and a screen-reader description; distinct "not shown" and "no responses" tiles; the state table remains the text alternative. Text contrast at least 5.2:1
 - [x] **Sector, income, gender, age and employment × concern heat maps** (`[itv_heatmap question=…]`): server-rendered tables shaded by percentage, so each is its own text alternative; no third-party JavaScript; each question shown alone, never crossed with state or another question
-- [ ] Filters and explanatory tooltips (progressive enhancement)
+- [x] Filters and explanatory tooltips (progressive enhancement: question selector, sort by concern, cell tooltips)
 - [x] Trends from the change in the published total between releases (responses carry no dates); weekly, small weeks hidden
 - [ ] Publish to Spaces/CDN (only if production load needs it; Cloudflare already caches the static files)
 - **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression and rounding verified on synthetic data in staging; the map and charts pass keyboard and screen-reader checks. Status: [Phase 2 report](phase-2-report.md).

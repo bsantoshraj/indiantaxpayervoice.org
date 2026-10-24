@@ -2,8 +2,7 @@
 
 **Status on 2026-10-24:** the aggregation pipeline, the public statistics API, the
 differencing protection, the tile-grid state/UT map and five concern heat maps are
-built and live on staging, and weekly trends are built. **Phase 2 is not complete:** filters and
-tooltips for the heat maps, a manual screen-reader check, and the privacy review
+built and live on staging, weekly trends and heat-map filters are built. **Phase 2 is not complete:** a manual screen-reader check, and the privacy review
 before launch remain. See [Remaining work](#6-remaining-work-to-close-phase-2).
 
 Phase 2 in the project brief (§12) is "Aggregation and public statistics"; the
@@ -29,7 +28,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 |---|---|---|
 | Properly licensed map asset | ✅ | Tile-grid map: one equal tile per state/UT, no boundaries, so no boundary data or Survey of India licensing (owner decision) |
 | Keyboard-accessible, with a tabular alternative | ✅ | Tiles are focusable with a visible focus ring and tooltip; the state table stays below the map; heat maps are real tables |
-| Filters and explanatory tooltips | ◐ | Map tooltips ✅; heat-map filters ❌ |
+| Filters and explanatory tooltips | ✅ | Map tooltips; heat maps: choose the question and sort groups by a concern (`[itv_heatmaps]`), cell tooltips such as "51% of '₹4 lakh to ₹12 lakh' chose Health costs (350 responses in this group)"; without JavaScript all tables show |
 | Counts, percentages and denominators understandable | ✅ | Each tile and heat-map row shows its count; captions state the denominator; rounding is explained on the page and in the methodology |
 | Respondent-reported state, never inferred from IP | ✅ | Only the answered state is used; stated on the methodology page |
 | Voluntary nature and limitations labelled | ✅ | "Not statistically representative" note under every statistic |
@@ -72,7 +71,7 @@ insufficient data is a requirement; hourly releases blur when it happened.
 ## 6. Remaining work to close Phase 2
 
 - [x] **Trends over time**: weekly change in the published (rounded) total between releases; weeks under 20 new responses hidden; a falling total starts a new series; history kept outside the published release (`[itv_trends]`, 6 tests)
-- [ ] **Heat-map filters** (for example, choose a question or concern) as progressive enhancement, without creating new cross-tabulations
+- [x] **Heat-map filters**: question selector and sort by concern, as progressive enhancement; only hides, shows and reorders tables already published, so no new combination of answers is computed
 - [ ] **Manual screen-reader test** of the map and heat maps (NVDA on Windows or TalkBack on Android)
 - [ ] **Privacy review before launch** (brief §8): minimum group size, rounding, the zero-versus-hidden signal, and the free-text comments, ideally by someone independent
 - [ ] **Staging verification without publishing**: run the aggregator on synthetic data into a temporary directory on staging and check the output, so no fabricated figures appear publicly
