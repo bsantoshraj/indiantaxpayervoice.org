@@ -11,6 +11,10 @@ fi
 # Keep URLs in step with .env (e.g. after changing BIND_ADDR / host IP).
 wp option update home "$WP_URL"
 wp option update siteurl "$WP_URL"
+# Admin email follows .env (set at install only otherwise). Set directly: the CLI
+# skips WordPress's confirmation email, which local/staging cannot receive reliably.
+wp option update admin_email "$WP_ADMIN_EMAIL"
+wp user update "$WP_ADMIN_USER" --user_email="$WP_ADMIN_EMAIL" --skip-email >/dev/null
 wp option update blogdescription "We contribute. We deserve a voice."
 wp option update blog_public 0            # local/staging: discourage indexing
 wp option update default_comment_status closed

@@ -18,6 +18,10 @@ if [[ ! -f .env ]]; then
   ./infra/staging/configure-env.sh "$ip"
 fi
 for kv in "$@"; do set_var "${kv%%=*}" "${kv#*=}"; done
+# The project's contact address replaces the original placeholders (not secret).
+for var in WP_ADMIN_EMAIL LS_ADMIN_EMAIL; do
+  if grep -q "^$var=admin@example.invalid$" .env; then set_var "$var" hello@indiantaxpayervoice.org; fi
+done
 
 sudo ./infra/staging/setup-host-db.sh
 command -v age >/dev/null || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq age >/dev/null
@@ -48,5 +52,6 @@ set -a; . ./.env; set +a
 [[ -n "${ITV_LS_SURVEY_ID:-}" ]] || ./scripts/setup-local-survey.sh
 set -a; . ./.env; set +a
 docker compose up -d --no-build   # pick up ITV_LS_SURVEY_ID
+./scripts/sync-limesurvey-settings.sh
 docker compose run --rm wpcli bash /bootstrap.sh | tail -1
 docker compose ps --format '{{.Service}}: {{.Status}}'

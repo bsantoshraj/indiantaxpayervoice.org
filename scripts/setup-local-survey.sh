@@ -42,4 +42,5 @@ INSERT INTO lime_permissions (entity, entity_id, uid, permission, create_p, read
 SQL
 
 sed -i "s/^ITV_LS_SURVEY_ID=.*/ITV_LS_SURVEY_ID=${sid}/" .env
+./scripts/sync-limesurvey-settings.sh
 echo "Done. Survey URL: ${LS_PUBLIC_URL}/index.php/${sid}?lang=en"
