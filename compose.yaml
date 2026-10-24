@@ -58,6 +58,7 @@ services:
       - "${BIND_ADDR:-127.0.0.1}:${WP_PORT}:80"
     volumes:
       - wp_html:/var/www/html
+      - ./infra/php/zz-itv-hardening.ini:/usr/local/etc/php/conf.d/zz-itv-hardening.ini:ro
       - ./wordpress/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
       - ./wordpress/themes/itv:/var/www/html/wp-content/themes/itv:ro
     networks: [wp_net, stats_net]
@@ -135,6 +136,7 @@ services:
     volumes:
       # Uploaded files and survey assets: shared storage in production.
       - ls_upload:/var/www/html/upload
+      - ./infra/php/zz-itv-hardening.ini:/usr/local/etc/php/conf.d/zz-itv-hardening.ini:ro
     networks: [ls_net, agg_net, survey_net]
 
   # Bot-challenge gate (ALTCHA proof of work; Turnstile when keys are set).
