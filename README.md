@@ -106,3 +106,24 @@ exposure.
 `scripts/pull-staging-backups.sh <ip>` copies the encrypted files to
 `~/itv-backups/staging` on the admin machine (still encrypted). Planned: a
 separate Spaces bucket as the off-site copy.
+
+## Cloudflare (zone-wide, shared by staging and production)
+
+`infra/terraform/cloudflare` manages the cache rules, browser-cache setting and
+tiered cache for `indiantaxpayervoice.org` (one cache ruleset per zone, so it is
+separate from the per-environment Terraform). Hostnames are listed per role in
+`variables.tf`; add production's there.
+
+```bash
+export CLOUDFLARE_API_TOKEN="$(cat ~/.config/itv/cf_token)"
+cd infra/terraform/cloudflare && terraform init && terraform plan
+```
+
+- **Statistics:** cached at the edge per the origin's `Cache-Control` (5 minutes).
+- **WordPress pages:** cached 10 minutes for anonymous visitors. Admin, login,
+  `wp-json`, previews and logged-in/comment/password cookies always reach the origin.
+  404s are cached for 60 s and 5xx are never cached.
+- **Survey, gate and LimeSurvey admin:** never cached.
+- `scripts/purge-cdn.sh <host>...` purges only the named hostnames; the staging
+  deploy runs it at the end. Content edited in wp-admin can take up to 10 minutes
+  to appear for visitors unless purged.
