@@ -235,3 +235,9 @@ jobs:
         run: |
           sleep 10
           scripts/smoke.sh production
+      - name: Notify search engines (IndexNow)
+        env:
+          INDEXNOW_ID: ${{ vars.INDEXNOW_ID }}
+        run: |
+          if [[ -z "$INDEXNOW_ID" ]]; then echo "::notice::INDEXNOW_ID not set; skipping"; exit 0; fi
+          scripts/indexnow.sh indiantaxpayervoice.org || echo "::warning::IndexNow submission failed (search engines are notified on the next deploy)"
