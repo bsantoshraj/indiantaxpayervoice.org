@@ -46,6 +46,28 @@ else
   docker compose up -d --remove-orphans
 fi
 
+# Config files are bind-mounted as single files. rsync replaces them with new
+# files, but a running container keeps reading the old one until it restarts, so
+# restart only the services whose config changed since the last deploy.
+caddyfile=$(sed -n 's/^CADDYFILE=//p' .env); caddyfile=${caddyfile:-Caddyfile}
+declare -A config=(
+  [survey-proxy]="infra/nginx/survey.conf infra/nginx/survey-locations.inc"
+  [stats]="infra/nginx/stats.conf"
+  [caddy]="infra/staging/$caddyfile"
+  [wordpress]="infra/php/zz-itv-hardening.ini"
+  [limesurvey]="infra/php/zz-itv-hardening.ini"
+)
+mkdir -p var; touch var/deployed-config.sha256
+for svc in "${!config[@]}"; do
+  # shellcheck disable=SC2086  # word-split the file list on purpose
+  sum=$(cat ${config[$svc]} | sha256sum | cut -c1-64)
+  if ! grep -qx "$svc $sum" var/deployed-config.sha256; then
+    echo "Config changed for $svc: restarting it"
+    docker compose restart "$svc" >/dev/null
+    sed -i "/^$svc /d" var/deployed-config.sha256; echo "$svc $sum" >> var/deployed-config.sha256
+  fi
+done
+
 echo "Waiting for LimeSurvey…"   # the public proxy serves / ; admin routes are refused there
 for _ in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8081/ && break; sleep 5; done
 set -a; . ./.env; set +a
