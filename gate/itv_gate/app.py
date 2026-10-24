@@ -53,6 +53,10 @@ class Config:
     secure_cookie: bool = False
     turnstile_site_key: str = ""
     turnstile_secret: str = ""
+    # Controlled release: when False nobody gets a pass and the gate page says the
+    # survey is not open yet. The LimeSurvey admin (Access host) is unaffected.
+    survey_open: bool = True
+    site_url: str = ""
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -71,6 +75,8 @@ class Config:
             secure_cookie=os.environ.get("ITV_GATE_SECURE_COOKIE", "1") == "1",
             turnstile_site_key=os.environ.get("TURNSTILE_SITE_KEY", ""),
             turnstile_secret=os.environ.get("TURNSTILE_SECRET", ""),
+            survey_open=os.environ.get("ITV_SURVEY_OPEN", "1") == "1",
+            site_url=os.environ.get("ITV_SITE_URL", ""),
         )
 
     @property
@@ -170,6 +176,39 @@ def verify_turnstile(cfg: Config, token: str, post=None) -> bool:
     except (OSError, ValueError):
         return False  # fail closed: the edge is unavailable or the response is malformed
     return body.get("success") is True
+
+
+CLOSED_PAGE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The survey is not open yet · Indian Taxpayer Voice</title>
+<style>
+  body {{ margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:#12232E; background:#F6F3EE;
+         min-height:100vh; display:grid; place-items:center; padding:16px; font-size:17px; line-height:1.6; }}
+  main {{ background:#fff; border:1px solid #DCE3E7; border-radius:16px; max-width:520px; width:100%; padding:28px; }}
+  h1 {{ color:#0F3D56; font-size:1.5rem; line-height:1.2; margin:0 0 .5rem; }}
+  a {{ color:#0E7C7B; font-weight:700; }}
+</style>
+</head>
+<body>
+<main>
+  <h1>The survey is not open yet</h1>
+  <p>Thank you for your interest. The Indian Taxpayer Voice survey will open soon; no responses are being collected yet.</p>
+  {back}
+</main>
+</body>
+</html>
+"""
+
+
+def render_closed(cfg: Config) -> bytes:
+    back = ""
+    if cfg.site_url.startswith("https://") or cfg.site_url.startswith("http://"):
+        back = '<p><a href="%s">Back to the website</a></p>' % html.escape(cfg.site_url, quote=True)
+    return CLOSED_PAGE.format(back=back).encode()
 
 
 GATE_PAGE = """<!doctype html>
@@ -290,6 +329,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urllib.parse.urlsplit(self.path)
         if url.path == "/gate/check":
+            if not self.cfg.survey_open:
+                return self._send(401)  # closed: nobody reaches the survey (sent to /gate/)
             if not self.cfg.enabled:
                 return self._send(204)  # local development only; refused in staging/production
             value = self._pass_cookie()
@@ -299,6 +340,9 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == "/gate/challenge":
             return self._send(200, json.dumps(new_challenge(self.cfg)).encode(), "application/json")
         if url.path in ("/gate/", "/gate"):
+            if not self.cfg.survey_open:
+                return self._send(503, render_closed(self.cfg), "text/html; charset=utf-8",
+                                  {**self._csp(), "Retry-After": "86400"})
             nxt = safe_next(urllib.parse.parse_qs(url.query).get("next", [None])[0])
             if not self.cfg.enabled:
                 return self._send(303, b"", headers={"Location": nxt})
@@ -318,6 +362,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if urllib.parse.urlsplit(self.path).path != "/gate/verify":
             return self._send(404, b"not found\n")
+        if not self.cfg.survey_open:
+            return self._send(503, render_closed(self.cfg), "text/html; charset=utf-8", self._csp())
         length = int(self.headers.get("Content-Length") or 0)
         if length > 16_384:
             return self._send(413, b"too large\n")

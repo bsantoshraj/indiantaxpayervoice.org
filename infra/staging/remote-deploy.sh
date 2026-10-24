@@ -15,9 +15,19 @@ ip=$(curl -fsS --max-time 5 http://169.254.169.254/metadata/v1/interfaces/public
 set_var() { if grep -q "^$1=" .env; then sed -i "s#^$1=.*#$1=$2#" .env; else echo "$1=$2" >> .env; fi; }
 if [[ ! -f .env ]]; then
   ./scripts/init-local-env.sh
-  ./infra/staging/configure-env.sh "$ip"
+  # First run on a new droplet: scripts/deploy.sh says which environment it is.
+  ./infra/staging/configure-env.sh "$ip" "${ITV_BOOTSTRAP_DOMAIN:-}" "${ITV_BOOTSTRAP_ENV:-staging}"
 fi
 for kv in "$@"; do set_var "${kv%%=*}" "${kv#*=}"; done
+# Per-environment settings from the repository (infra/env/<env>.env): non-secret
+# ITV_* values only, so a reviewed pull request is the way to change them.
+env_name=$(sed -n 's/^ITV_ENV=//p' .env)
+if [[ -f "infra/env/$env_name.env" ]]; then
+  while IFS='=' read -r key value; do
+    [[ "$key" =~ ^ITV_[A-Z0-9_]+$ && ! "$key" =~ (SECRET|PASSWORD|TOKEN|KEY) ]] || { echo "infra/env/$env_name.env: refusing setting '$key'" >&2; exit 1; }
+    set_var "$key" "$value"
+  done < <(grep -E '^[^#[:space:]]' "infra/env/$env_name.env")
+fi
 # The project's contact address replaces the original placeholders (not secret).
 for var in WP_ADMIN_EMAIL LS_ADMIN_EMAIL; do
   if grep -q "^$var=admin@example.invalid$" .env; then set_var "$var" hello@indiantaxpayervoice.org; fi

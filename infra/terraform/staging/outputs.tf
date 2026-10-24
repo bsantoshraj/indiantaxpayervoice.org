@@ -1,21 +1,12 @@
 output "ip" {
-  value = digitalocean_droplet.staging.ipv4_address
+  value = module.env.ip
 }
 
 output "ssh" {
-  value = "ssh deploy@${digitalocean_droplet.staging.ipv4_address}"
-}
-
-# Proxied by Cloudflare (Origin CA certificate on the droplet).
-output "urls" {
-  value = {
-    website = "https://staging.indiantaxpayervoice.org"
-    survey  = "https://survey-staging.indiantaxpayervoice.org"
-    stats   = "https://stats-staging.indiantaxpayervoice.org"
-  }
+  value = "ssh deploy@${module.env.ip}"
 }
 
 # Public keys only (not secret), used by scripts/sync-staging-keys.sh.
 output "authorized_keys" {
-  value = join("\n", concat([trimspace(digitalocean_ssh_key.admin.public_key)], [for k in data.digitalocean_ssh_key.extra : trimspace(k.public_key)]))
+  value = module.env.authorized_keys
 }

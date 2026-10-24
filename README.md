@@ -9,6 +9,7 @@ representative of all taxpayers.
 
 | Document | Read it to… |
 |---|---|
+| [Environments](docs/environments.md) | see every deliberate difference between dev, staging and production, and how to open the survey |
 | [How it works](docs/how-it-works.md) | understand the components, how a survey response becomes a public statistic, and the privacy guarantees |
 | [Development](docs/development.md) | run everything locally, run the tests, edit pages or the survey, and open a pull request |
 | [CI/CD](docs/ci-cd.md) | ship a change, roll back, and understand what the pipeline can and cannot do |
@@ -25,9 +26,9 @@ representative of all taxpayers.
 |---|---|---|---|---|
 | **Local** | http://localhost:8080 | http://localhost:8081 | http://localhost:8082 | http://localhost:8083 |
 | **Staging** | https://staging.indiantaxpayervoice.org | https://survey-staging.indiantaxpayervoice.org | https://stats-staging.indiantaxpayervoice.org | https://survey-admin-staging.indiantaxpayervoice.org (Cloudflare Access) |
-| **Production** | not yet created | | | |
+| **Production** | https://indiantaxpayervoice.org | https://survey.indiantaxpayervoice.org (controlled release) | https://stats.indiantaxpayervoice.org | https://survey-admin.indiantaxpayervoice.org (Cloudflare Access) |
 
-Staging deploys automatically when a pull request is merged into `main`.
+Staging deploys automatically when a pull request is merged into `main`; production is promoted from staging by a manual, approved CI run ([CI/CD](docs/ci-cd.md)).
 
 ## Quick start
 

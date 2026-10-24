@@ -1,27 +1,12 @@
-# LimeSurvey admin behind Cloudflare Access. The admin has its own hostname so
-# Access can cover all of it (Access matches paths, not query strings, and
-# LimeSurvey also routes admin via ?r=admin/...). The public survey hostname
-# refuses every admin route at nginx, and the origin re-verifies the Access
-# token (gate /access/check), so a misconfigured policy alone cannot open it.
-
-data "terraform_remote_state" "staging" {
-  backend = "local"
-  config  = { path = "${path.module}/../staging/terraform.tfstate" }
-}
+# Admins behind Cloudflare Access, per environment: the LimeSurvey admin on its
+# own hostname (Access matches paths, not query strings, and LimeSurvey also
+# routes admin via ?r=admin/...), and WordPress /wp-admin and /wp-login.php.
+# The origin re-verifies the Access token (gate /access/check), so a
+# misconfigured policy alone cannot open either admin.
 
 locals {
   account_id  = data.cloudflare_zone.itv.account.id
   team_domain = "indiantaxpayervoice.cloudflareaccess.com"
-}
-
-resource "cloudflare_dns_record" "staging_survey_admin" {
-  zone_id = local.zone_id
-  name    = var.staging_survey_admin_host
-  type    = "A"
-  content = data.terraform_remote_state.staging.outputs.ip
-  proxied = true # required: the origin accepts only Cloudflare, and Access runs at the edge
-  ttl     = 1
-  comment = "LimeSurvey admin (staging), behind Cloudflare Access"
 }
 
 resource "cloudflare_zero_trust_access_identity_provider" "email_otp" {
@@ -39,11 +24,12 @@ resource "cloudflare_zero_trust_access_policy" "survey_admins" {
   session_duration = "8h"
 }
 
-resource "cloudflare_zero_trust_access_application" "staging_survey_admin" {
+resource "cloudflare_zero_trust_access_application" "survey_admin" {
+  for_each                   = local.envs
   account_id                 = local.account_id
-  name                       = "LimeSurvey admin (staging)"
+  name                       = "LimeSurvey admin (${each.key})"
   type                       = "self_hosted"
-  domain                     = var.staging_survey_admin_host
+  domain                     = each.value.survey_admin
   session_duration           = "8h"
   allowed_idps               = [cloudflare_zero_trust_access_identity_provider.email_otp.id]
   auto_redirect_to_identity  = true
@@ -53,17 +39,15 @@ resource "cloudflare_zero_trust_access_application" "staging_survey_admin" {
   policies                   = [{ id = cloudflare_zero_trust_access_policy.survey_admins.id, precedence = 1 }]
 }
 
-# WordPress admin and login behind the same Access policy. Path-based: the rest
-# of the site stays public. Nothing public uses admin-ajax.php (checked), so all
-# of /wp-admin is covered. Caddy re-checks the token at the origin (forward_auth
-# to the gate), so the edge app is not the only lock.
-resource "cloudflare_zero_trust_access_application" "staging_wordpress_admin" {
+# Nothing public uses admin-ajax.php (checked), so all of /wp-admin is covered.
+resource "cloudflare_zero_trust_access_application" "wordpress_admin" {
+  for_each   = local.envs
   account_id = local.account_id
-  name       = "WordPress admin (staging)"
+  name       = "WordPress admin (${each.key})"
   type       = "self_hosted"
   destinations = [
-    { type = "public", uri = "${var.staging_wordpress_host}/wp-admin" },
-    { type = "public", uri = "${var.staging_wordpress_host}/wp-login.php" },
+    { type = "public", uri = "${each.value.website}/wp-admin" },
+    { type = "public", uri = "${each.value.website}/wp-login.php" },
   ]
   session_duration           = "8h"
   allowed_idps               = [cloudflare_zero_trust_access_identity_provider.email_otp.id]
@@ -72,4 +56,13 @@ resource "cloudflare_zero_trust_access_application" "staging_wordpress_admin" {
   http_only_cookie_attribute = true
   same_site_cookie_attribute = "lax"
   policies                   = [{ id = cloudflare_zero_trust_access_policy.survey_admins.id, precedence = 1 }]
+}
+
+moved {
+  from = cloudflare_zero_trust_access_application.staging_survey_admin
+  to   = cloudflare_zero_trust_access_application.survey_admin["staging"]
+}
+moved {
+  from = cloudflare_zero_trust_access_application.staging_wordpress_admin
+  to   = cloudflare_zero_trust_access_application.wordpress_admin["staging"]
 }

@@ -179,3 +179,40 @@ def test_gate_enabled_by_default(monkeypatch):
     monkeypatch.delenv("ITV_GATE_ENABLED", raising=False)
     monkeypatch.delenv("ITV_ENV", raising=False)
     assert Config.from_env().enabled is True
+
+
+# --- Controlled release: survey closed ----------------------------------------
+
+@pytest.fixture
+def closed_server():
+    cfg = Config(secret=SECRET.encode(), pow_cost=10, secure_cookie=False, survey_open=False,
+                 site_url="https://example.org/")
+    srv = make_server(cfg, host="127.0.0.1", port=0)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    yield cfg, f"http://127.0.0.1:{srv.server_port}"
+    srv.shutdown()
+
+
+def test_closed_survey_refuses_even_a_valid_pass(closed_server):
+    cfg, base = closed_server
+    status, _, _ = get(base + "/gate/check", cookie=f"{COOKIE}={make_pass(cfg)}")
+    assert status == 401
+
+
+def test_closed_survey_gate_page_says_not_open(closed_server):
+    _, base = closed_server
+    status, headers, body = get(base + "/gate/?next=/index.php/1")
+    assert status == 503 and headers["Retry-After"] == "86400"
+    assert b"not open yet" in body and b'href="https://example.org/"' in body
+    assert b"altcha-widget" not in body
+
+
+def test_closed_survey_verify_issues_no_pass(closed_server):
+    _, base = closed_server
+    status, headers, _ = post(base + "/gate/verify", {"altcha": "x", "next": "/index.php/1"})
+    assert status == 503 and "Set-Cookie" not in headers
+
+
+def test_closed_survey_health_still_ok(closed_server):
+    _, base = closed_server
+    assert get(base + "/gate/health")[0] == 200

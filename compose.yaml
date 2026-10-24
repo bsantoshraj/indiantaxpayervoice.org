@@ -155,6 +155,9 @@ services:
       ITV_GATE_SECURE_COOKIE: ${ITV_GATE_SECURE_COOKIE:-1}
       TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
       TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+      # Controlled release (infra/env/<env>.env): 0 = the survey is closed to the public.
+      ITV_SURVEY_OPEN: ${ITV_SURVEY_OPEN:-1}
+      ITV_SITE_URL: ${WP_URL:-}
       # Cloudflare Access check for the LimeSurvey admin (required in staging/production).
       ITV_ACCESS_TEAM_DOMAIN: ${ITV_ACCESS_TEAM_DOMAIN:-}
       ITV_ACCESS_AUD: ${ITV_ACCESS_AUD:-}

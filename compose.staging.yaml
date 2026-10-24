@@ -11,6 +11,7 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
+      ITV_ENV: ${ITV_ENV}          # robots_{staging,production} snippet in the Caddyfile
       WP_HOST: ${WP_HOST}
       SURVEY_HOST: ${SURVEY_HOST}
       SURVEY_ADMIN_HOST: ${SURVEY_ADMIN_HOST}

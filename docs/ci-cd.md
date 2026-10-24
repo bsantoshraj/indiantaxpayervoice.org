@@ -59,6 +59,16 @@ LimeSurvey) before merging, and merge one at a time so a failed deploy points at
 change. Terraform provider updates also need `terraform init -upgrade` and a plan on
 the admin machine (CI does not apply Terraform).
 
+## Promoting to production
+
+**Actions → CI → Run workflow**, branch `main`, environment `production`, and
+optionally a main commit SHA (empty = latest main). The run waits for the owner's
+approval (GitHub environment `production`), checks the commit is on `main` and that
+its images exist in GHCR, then deploys **those images** (nothing is rebuilt), purges
+the production cache and runs `scripts/smoke.sh production`. Production has its own
+restricted CI key (`PRODUCTION_SSH_KEY`, `PRODUCTION_HOST` and
+`PRODUCTION_SSH_KNOWN_HOSTS` in the `production` environment).
+
 ## Survey changes
 
 Each deploy compares the SHA-256 of `survey/questionnaire-v1.json` with

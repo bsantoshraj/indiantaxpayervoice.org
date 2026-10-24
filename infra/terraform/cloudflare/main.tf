@@ -8,7 +8,15 @@ data "cloudflare_zone" "itv" {
 
 locals {
   zone_id = data.cloudflare_zone.itv.zone_id
-  hosts   = { for role, list in { wp = var.wordpress_hosts, stats = var.stats_hosts, survey = var.survey_hosts } : role => join(" ", [for h in list : "\"${h}\""]) }
+  envs    = var.environments
+  # Space-separated, quoted host lists for rule expressions, across all environments.
+  quoted = { for role, list in {
+    wp            = [for e in local.envs : e.website]
+    stats         = [for e in local.envs : e.stats]
+    survey        = flatten([for e in local.envs : [e.survey, e.survey_admin]]) # never cached
+    public_survey = [for e in local.envs : e.survey]                            # admin routes blocked at the edge
+  } : role => join(" ", [for h in list : "\"${h}\""]) }
+  hosts = local.quoted
 
   # WordPress requests that must always reach the origin: admin, login, API,
   # previews, and anyone logged in or holding a password/comment cookie.

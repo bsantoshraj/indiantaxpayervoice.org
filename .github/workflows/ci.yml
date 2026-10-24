@@ -13,8 +13,13 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      environment:
+        description: "Where to deploy. production promotes images already built for that commit (no rebuild) and waits for the owner's approval."
+        type: choice
+        options: [staging, production]
+        default: staging
       sha:
-        description: "Redeploy an earlier main commit to staging (full 40-character SHA; its images must exist). Empty = latest."
+        description: "Main commit to deploy (full 40-character SHA; its images must exist). Empty = latest main."
         required: false
         default: ""
 
@@ -79,7 +84,8 @@ jobs:
   images:
     name: images (${{ matrix.name }})   # stable check names, required by the main ruleset
     needs: [test, lint]
-    if: github.event_name != 'workflow_dispatch' || inputs.sha == ''
+    # Never rebuilt for a redeploy of an earlier commit or for production (promotion).
+    if: github.event_name != 'workflow_dispatch' || (inputs.sha == '' && inputs.environment != 'production')
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -116,6 +122,7 @@ jobs:
     # Only main deploys; a failed test or lint never deploys (images is skipped on rollbacks).
     if: >-
       always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      && (github.event_name == 'push' || inputs.environment == 'staging')
       && needs.test.result == 'success' && needs.lint.result == 'success'
       && (needs.images.result == 'success' || needs.images.result == 'skipped')
     runs-on: ubuntu-24.04
@@ -162,4 +169,67 @@ jobs:
       - name: Smoke tests
         run: |
           sleep 10
-          scripts/smoke-staging.sh
+          scripts/smoke.sh staging
+
+  # Promotion to production: manual (Run workflow, environment = production), waits
+  # for the owner's approval (GitHub environment "production"), and deploys the GHCR
+  # images already built and tested for that main commit. Nothing is rebuilt.
+  deploy-production:
+    needs: [test, lint]
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'production' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    env:
+      SHA: ${{ inputs.sha || github.sha }}
+      HOST: ${{ vars.PRODUCTION_HOST }}
+    steps:
+      - name: Check the commit to promote
+        run: '[[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Not a full commit SHA: $SHA"; exit 1; }'
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+          fetch-depth: 0
+      - name: Only commits on main, whose images exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git merge-base --is-ancestor "$SHA" origin/main || { echo "$SHA is not on main"; exit 1; }
+          for image in gate aggregator; do
+            docker manifest inspect "${REGISTRY}/itv-${image}:${SHA}" >/dev/null 2>&1 \
+              || { echo "::error::no ${image} image for ${SHA}; it must have been built by a push to main"; exit 1; }
+          done
+      - name: SSH key and pinned host key
+        env:
+          KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.PRODUCTION_SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/ci && chmod 600 ~/.ssh/ci
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Sync code
+        run: |
+          rsync -az --delete --exclude-from=infra/staging/rsync-excludes.txt \
+            -e "ssh -i $HOME/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=8" ./ "deploy@$HOST:"
+      - name: Deploy (pull this commit's images)
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | ssh -i ~/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=8 \
+            "deploy@$HOST" "deploy $SHA"
+      - name: Purge the production CDN cache
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PURGE_TOKEN }}
+          ITV_CF_ZONE_ID: ${{ vars.CF_ZONE_ID }}
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then echo "::warning::CF_PURGE_TOKEN not set; cache not purged"; exit 0; fi
+          scripts/purge-cdn.sh indiantaxpayervoice.org stats.indiantaxpayervoice.org
+      - name: Smoke tests
+        run: |
+          sleep 10
+          scripts/smoke.sh production
