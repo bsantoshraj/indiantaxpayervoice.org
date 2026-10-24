@@ -161,3 +161,16 @@ Text Domain: itv
 .itv-heatmap td.itv-heat--none { background: #fff; color: #56656F; font-weight: 400; }
 .itv-heatmap tbody th { font-weight: 600; min-width: 7rem; }
 .itv-heatmap thead th, .itv-heatmap td:nth-child(2) { padding-left: .45rem; padding-right: .45rem; }
+
+/* Responses over time ([itv_trends]): a bar behind each weekly figure. */
+.itv-trends .itv-trend-cell { position: relative; min-width: 12rem; font-variant-numeric: tabular-nums; }
+.itv-bar { display: inline-block; height: .8em; margin-right: .5rem; vertical-align: middle; border-radius: 3px; background: #167A73; }   /* width: up to 70% of the cell, proportional */
+
+/* Heat-map filters ([itv_heatmaps]) */
+.itv-heatmap-filters { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin: 0 0 1rem; }
+.itv-heatmap-filters label { display: flex; flex-direction: column; gap: .3rem; font-weight: 600; font-size: .92rem; }
+.itv-heatmap-filters select { font: inherit; font-weight: 400; min-height: 44px; padding: .4rem 2rem .4rem .75rem; border: 1px solid #7A8C97; border-radius: 8px; background: #fff; color: #12232E; max-width: 100%; }
+.itv-heatmap-filters select:focus-visible { outline: 3px solid #2EC4B6; outline-offset: 2px; }
+.itv-heatmap-section h3 { margin: 1.25rem 0 .5rem; }
+.itv-heatmap .itv-heat--focus { box-shadow: inset 0 0 0 3px #12232E; }
+.itv-heatmap thead th.itv-heat--focus { box-shadow: none; text-decoration: underline; text-underline-offset: 3px; }

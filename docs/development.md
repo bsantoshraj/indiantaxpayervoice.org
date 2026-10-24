@@ -23,7 +23,7 @@ docker compose up -d                                 # pick up ITV_LS_SURVEY_ID
 | Survey (public proxy) | http://localhost:8081/index.php/&lt;survey id&gt; | The gate is off locally (`ITV_GATE_ENABLED=0`) |
 | Survey over HTTPS | https://localhost:8443 | Needed to test the gate (browsers run the proof-of-work only in a secure context); certificates from `scripts/make-local-certs.sh` |
 | LimeSurvey admin | http://localhost:8083 | Open locally (no Cloudflare Access); `LS_ADMIN_USER` / `LS_ADMIN_PASSWORD` |
-| Statistics | http://localhost:8082/v1/statistics/summary | Refreshed every 5 minutes by `aggregator-cron` |
+| Statistics | http://localhost:8082/v1/statistics/summary | Refreshed every 5 minutes locally (`ITV_AGG_INTERVAL=300`; hourly on staging and production) |
 
 `BIND_ADDR` in `.env` is `127.0.0.1` (this machine only) or `0.0.0.0` (your LAN,
 plain HTTP). With `0.0.0.0`, set `WP_URL` and `LS_PUBLIC_URL` to the machine's LAN
@@ -32,8 +32,8 @@ address and re-run the bootstrap.
 ## Tests
 
 ```bash
-(cd aggregator && python3 -m pytest -q)                                  # 55 tests, no dependencies
-(cd gate && pip install -r requirements.txt pytest && python3 -m pytest -q)   # 34 tests
+(cd aggregator && python3 -m pytest -q)                                  # 67 tests, no dependencies
+(cd gate && pip install -r requirements.txt pytest && python3 -m pytest -q)   # 38 tests
 docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning scripts/*.sh infra/staging/*.sh
 terraform fmt -check -recursive infra/terraform
 ```

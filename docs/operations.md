@@ -20,10 +20,10 @@ go to CI or the repository:
 | `~/.config/itv/ci-deploy-key.pub` | Public half of the CI deploy key |
 | `~/itv/itv.{crt,key}` | Cloudflare Origin CA certificate and key (copied to `/opt/itv/var/origin-tls` on the droplet) |
 | `infra/terraform/*/terraform.tfstate` | Terraform state (gitignored; only copy) |
-| `~/itv-backups/staging/` | Encrypted copies of the droplet's backups (pulled daily at 08:30 IST by cron) |
+| `~/itv-backups/staging/`, `~/itv-backups/production/` | Encrypted copies of each droplet's backups (pulled daily at 08:30 and 08:35 IST by cron; 30 days kept) |
 
-All of these should be mode 600. SSH to the droplet: `ssh deploy@134.209.157.144`
-(key-only; no passwords, no root).
+All of these should be mode 600. SSH: `ssh deploy@134.209.157.144` (staging) or
+`ssh deploy@64.227.176.80` (production); key-only, no passwords, no root.
 
 ## Terraform
 
@@ -32,25 +32,28 @@ reviewed in a PR:
 
 | Directory | Manages |
 |---|---|
-| `infra/terraform/staging` | Droplet, firewall (HTTPS from Cloudflare only, SSH key-only), SSH keys, project |
+| `infra/terraform/modules/droplet` | Shared: droplet, firewall (HTTPS from Cloudflare only, SSH key-only), project |
+| `infra/terraform/staging`, `infra/terraform/production` | Each environment's module call: name, size, keys (compare the two files to see every difference) |
 | `infra/terraform/cloudflare` | Zone-wide: cache rules, browser cache TTL, tiered cache, WAF and rate limiting, and the admins (DNS, Access applications, policy, email-code login). Shared by staging and production because a zone has one cache ruleset |
 
 ```bash
 export DIGITALOCEAN_TOKEN="$(cat ~/.config/itv/do_token)"
 export CLOUDFLARE_API_TOKEN="$(cat ~/.config/itv/cf_token)"
-terraform -chdir=infra/terraform/staging plan       # review, then apply
+terraform -chdir=infra/terraform/staging plan       # review, then apply (saved plan file)
+terraform -chdir=infra/terraform/production plan
 terraform -chdir=infra/terraform/cloudflare plan
 ```
 
-The droplet ignores changes to `ssh_keys` and `user_data` so it is never rebuilt by
-accident. Its DNS records for `staging`, `survey-staging` and `stats-staging` were
-created by hand in Cloudflare; `survey-admin-staging` is in Terraform.
+The droplets ignore changes to `ssh_keys` and `user_data` and have `prevent_destroy`,
+so neither is rebuilt or deleted by accident. All DNS records for both environments
+are in Terraform (staging's first records were imported), as are SPF, DMARC, CAA and
+the Bot Fight Mode setting (off).
 
 ## Cloudflare
 
 - **SSL/TLS:** Full (strict), Always Use HTTPS on, origin uses a Cloudflare Origin CA
   certificate (valid only behind Cloudflare, so these names must stay proxied).
-- **Caching:** see [how-it-works.md](how-it-works.md#hostnames-staging). Purge one
+- **Caching:** see [how-it-works.md](how-it-works.md#hostnames). Purge one
   environment only: `scripts/purge-cdn.sh <hostname>...`.
 - **WAF** (`infra/terraform/cloudflare/waf.tf`): Cloudflare Managed Free Ruleset on
   every host; custom rules block `/xmlrpc.php`, LimeSurvey admin routes on the public
@@ -70,6 +73,16 @@ created by hand in Cloudflare; `survey-admin-staging` is in Terraform.
 `terraform -chdir=infra/terraform/cloudflare apply` and deploy (the deploy writes the
 allowlist into the droplet's `.env`, which the origin check uses). They also need a
 LimeSurvey account.
+
+## Email and certificate DNS
+
+`infra/terraform/cloudflare/email_dns.tf`: SPF allows only Google Workspace (`-all`);
+DMARC starts at `p=none` with aggregate reports to `hello@indiantaxpayervoice.org`;
+CAA limits certificate issuance to the CAs Cloudflare uses (violation reports to the
+same mailbox). **After about two weeks of clean DMARC reports** (only Google sending,
+all passing), set `dmarc_policy = "quarantine"` in `variables.tf` and apply; later
+`reject`. If anything else ever needs to send mail as the domain (for example
+LimeSurvey or a newsletter), add it to SPF first.
 
 ## SEO and analytics
 
@@ -98,15 +111,16 @@ its own backups.
 
 ```bash
 # Restore test (monthly, and after any database or backup change)
-ssh deploy@134.209.157.144 'sudo /opt/itv/infra/staging/restore-test.sh /dev/stdin' < ~/.config/itv/backup-age.key
-# Copy backups here now (cron does this daily)
-scripts/pull-staging-backups.sh 134.209.157.144
+IP=134.209.157.144   # staging; production: 64.227.176.80
+ssh deploy@$IP 'sudo /opt/itv/infra/staging/restore-test.sh /dev/stdin' < ~/.config/itv/backup-age.key
+# Copy backups here now (cron does this daily; production into ~/itv-backups/production)
+scripts/pull-staging-backups.sh $IP [~/itv-backups/production]
 ```
 
 The restore test restores the newest complete set into scratch databases (decrypted
 data and the key stay in memory), requires a byte-identical re-dump, checks WordPress
 and the active survey, checks the set's `.env` holds all five LimeSurvey keys, and
-drops the scratch databases. Last run: PASS in about 2 seconds.
+drops the scratch databases. Last runs (2026-10-24): PASS on staging and on production.
 
 ## Deleting survey responses (retention)
 
@@ -123,8 +137,8 @@ their survey round**. Responses carry no dates, so deletion is per round:
 ## Rotating secrets
 
 ```bash
-ssh deploy@134.209.157.144 '/opt/itv/infra/staging/rotate-secrets.sh'                     # passwords, gate secret
-ssh deploy@134.209.157.144 '/opt/itv/infra/staging/rotate-secrets.sh --encryption-keys'   # also LimeSurvey keys
+ssh deploy@$IP '/opt/itv/infra/staging/rotate-secrets.sh'                     # passwords, gate secret
+ssh deploy@$IP '/opt/itv/infra/staging/rotate-secrets.sh --encryption-keys'   # also LimeSurvey keys (refused while encrypted data exists)
 ```
 It regenerates every secret in `/opt/itv/.env`, applies it to the database users, the
 LimeSurvey and WordPress accounts and the containers, logs every admin out, checks the

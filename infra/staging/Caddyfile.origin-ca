@@ -17,6 +17,8 @@
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
 		-Server
 	}
 	encode zstd gzip
@@ -38,6 +40,12 @@
 {$WP_HOST} {
 	import security
 	import robots_{$ITV_ENV}
+	# Not a full script policy (WordPress uses inline scripts): blocks framing by
+	# other sites, <base> hijacking, plugins, and forms posting elsewhere.
+	header Content-Security-Policy "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests"
+	# WordPress files that only reveal its version.
+	@wpmeta path /readme.html /license.txt /wp-config-sample.php
+	respond @wpmeta 404
 	# WordPress admin and login: Cloudflare Access at the edge, token re-verified
 	# here by the gate (same check as the LimeSurvey admin).
 	@wpadmin path /wp-admin /wp-admin/* /wp-login.php

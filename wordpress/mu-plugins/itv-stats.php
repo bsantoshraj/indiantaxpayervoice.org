@@ -277,10 +277,10 @@ add_shortcode(
 		$out .= '<th scope="col">' . esc_html__( 'Group', 'itv' ) . '</th><th scope="col">' . esc_html__( 'Responses', 'itv' ) . '</th>';
 		foreach ( $concerns as $code => $label ) {
 			$short = ITV_CONCERN_SHORT[ $code ] ?? $label;
-			$out  .= '<th scope="col"><span aria-hidden="true">' . esc_html( $short ) . '</span><span class="itv-sr-only">' . esc_html( $label ) . '</span></th>';
+			$out  .= '<th scope="col" data-concern="' . esc_attr( $code ) . '"><span aria-hidden="true">' . esc_html( $short ) . '</span><span class="itv-sr-only">' . esc_html( $label ) . '</span></th>';
 		}
 		$out .= '</tr></thead><tbody>';
-		foreach ( $data['groups'] as $group ) {
+		foreach ( $data['groups'] as $order => $group ) {
 			$gstatus = $group['status'] ?? 'suppressed';
 			if ( 'published' === $gstatus ) {
 				$n = number_format_i18n( (int) $group['count'] );
@@ -289,18 +289,20 @@ add_shortcode(
 			} else {
 				$n = __( 'Not shown', 'itv' );
 			}
-			$out .= '<tr><th scope="row">' . esc_html( $group['label'] ) . '</th><td>' . esc_html( $n ) . '</td>';
+			$out .= '<tr data-order="' . (int) $order . '"><th scope="row">' . esc_html( $group['label'] ) . '</th><td>' . esc_html( $n ) . '</td>';
 			$cells = array_column( $group['concerns'], null, 'code' );
 			foreach ( array_keys( $concerns ) as $code ) {
 				$cell   = $cells[ $code ] ?? array( 'status' => 'suppressed' );
 				$status = $cell['status'] ?? 'suppressed';
 				if ( 'published' === $status ) {
 					$pct  = (int) $cell['percent'];
-					$out .= '<td class="itv-heat itv-tile--level' . itv_heat_level( $pct ) . '">' . esc_html( number_format_i18n( $pct ) ) . '%</td>';
+					/* translators: 1: percent, 2: group, 3: concern, 4: group size */
+					$tip  = sprintf( __( '%1$s%% of "%2$s" chose %3$s (%4$s responses in this group)', 'itv' ), number_format_i18n( $pct ), $group['label'], ITV_CONCERN_SHORT[ $code ] ?? $concerns[ $code ], $n );
+					$out .= '<td class="itv-heat itv-tile--level' . itv_heat_level( $pct ) . '" data-concern="' . esc_attr( $code ) . '" data-pct="' . $pct . '" title="' . esc_attr( $tip ) . '">' . esc_html( number_format_i18n( $pct ) ) . '%</td>';
 				} elseif ( 'none' === $status ) {
-					$out .= '<td class="itv-heat itv-heat--none">' . ( 'published' === $gstatus ? '0%' : esc_html( $dash ) ) . '</td>';
+					$out .= '<td class="itv-heat itv-heat--none" data-concern="' . esc_attr( $code ) . '" data-pct="' . ( 'published' === $gstatus ? '0' : '-1' ) . '">' . ( 'published' === $gstatus ? '0%' : esc_html( $dash ) ) . '</td>';
 				} else {
-					$out .= '<td class="itv-heat itv-tile--suppressed"><span aria-hidden="true">' . esc_html( $dash ) . '</span><span class="itv-sr-only">' . esc_html__( 'not shown', 'itv' ) . '</span></td>';
+					$out .= '<td class="itv-heat itv-tile--suppressed" data-concern="' . esc_attr( $code ) . '" data-pct="-1" title="' . esc_attr__( 'Not shown: small group', 'itv' ) . '"><span aria-hidden="true">' . esc_html( $dash ) . '</span><span class="itv-sr-only">' . esc_html__( 'not shown', 'itv' ) . '</span></td>';
 				}
 			}
 			$out .= '</tr>';
@@ -310,5 +312,87 @@ add_shortcode(
 			. '<li><span class="itv-swatch itv-tile--level1"></span><span class="itv-swatch itv-tile--level3"></span><span class="itv-swatch itv-tile--level5"></span> ' . esc_html__( 'Lower to higher share (under 10%, 10–24%, 25–39%, 40–59%, 60% or more)', 'itv' ) . '</li>'
 			. '<li><span class="itv-swatch itv-tile--suppressed"></span> ' . esc_html__( 'Not shown (small group)', 'itv' ) . '</li></ul>';
 		return $out . itv_stats_meta_note( $doc['meta'] );
+	}
+);
+
+/**
+ * Responses over time: weekly change in the published total (responses carry no
+ * dates). A table with a bar per week, so it is its own text alternative.
+ */
+add_shortcode(
+	'itv_trends',
+	function () {
+		$doc = itv_stats_fetch( 'trends' );
+		if ( ! $doc ) {
+			return itv_stats_unavailable();
+		}
+		$weeks = $doc['data']['weeks'] ?? array();
+		if ( ! $weeks ) {
+			return '<p role="status">' . esc_html__( 'Weekly figures will appear here after the first full week of responses.', 'itv' ) . '</p>' . itv_stats_meta_note( $doc['meta'] );
+		}
+		$max = 0;
+		foreach ( $weeks as $w ) {
+			$max = max( $max, (int) ( $w['new'] ?? 0 ) );
+		}
+		$out  = '<div class="itv-table-wrap" role="region" tabindex="0" aria-label="' . esc_attr__( 'Responses by week', 'itv' ) . '">';
+		$out .= '<table class="itv-table itv-trends"><caption>' . esc_html( $doc['data']['basis'] ?? '' ) . '</caption><thead><tr>';
+		$out .= '<th scope="col">' . esc_html__( 'Week starting', 'itv' ) . '</th><th scope="col">' . esc_html__( 'New responses', 'itv' ) . '</th><th scope="col">' . esc_html__( 'Total so far', 'itv' ) . '</th></tr></thead><tbody>';
+		foreach ( $weeks as $w ) {
+			$status = $w['status'] ?? 'suppressed';
+			$label  = date_i18n( 'j M Y', strtotime( $w['week_start'] . ' 00:00:00 UTC' ) );
+			if ( ! empty( $w['includes_earlier'] ) ) {
+				$label .= ' ' . __( '(includes earlier responses)', 'itv' );
+			}
+			if ( 'published' === $status ) {
+				$new  = (int) $w['new'];
+				$cell = '<span class="itv-bar" style="width:' . ( $max ? max( 2, round( 70 * $new / $max ) ) : 0 ) . '%" aria-hidden="true"></span>' . esc_html( number_format_i18n( $new ) );
+			} elseif ( 'none' === $status ) {
+				$cell = esc_html__( 'None', 'itv' );
+			} else {
+				$cell = esc_html__( 'Fewer than the minimum group size', 'itv' );
+			}
+			$out .= '<tr><th scope="row">' . esc_html( $label ) . '</th><td class="itv-trend-cell">' . $cell . '</td><td>' . esc_html( number_format_i18n( (int) $w['total'] ) ) . '</td></tr>';
+		}
+		$out .= '</tbody></table></div>';
+		return $out . itv_stats_meta_note( $doc['meta'] );
+	}
+);
+
+/**
+ * All five heat maps with filters: choose the question and sort the groups by a
+ * concern. Progressive enhancement: without JavaScript every table is shown;
+ * the script only hides, shows and reorders tables that are already published,
+ * so no new combination of answers is ever computed or revealed.
+ */
+add_shortcode(
+	'itv_heatmaps',
+	function () {
+		$summary = itv_stats_fetch( 'summary' );
+		if ( ! $summary ) {
+			return itv_stats_unavailable();
+		}
+		$questions = array(
+			'INDUSTRY' => __( 'Sector', 'itv' ),
+			'INCOME'   => __( 'Income band', 'itv' ),
+			'GENDER'   => __( 'Gender', 'itv' ),
+			'AGEBAND'  => __( 'Age band', 'itv' ),
+			'EMPTYPE'  => __( 'Employment type', 'itv' ),
+		);
+		wp_enqueue_script( 'itv-heatmap-filters', get_stylesheet_directory_uri() . '/assets/heatmap-filters.js', array(), (string) filemtime( get_stylesheet_directory() . '/assets/heatmap-filters.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) );
+
+		$out  = '<div class="itv-heatmaps">';
+		$out .= '<form class="itv-heatmap-filters" hidden onsubmit="return false"><label>' . esc_html__( 'Show concerns by', 'itv' ) . ' <select data-filter="question">';
+		foreach ( $questions as $code => $label ) {
+			$out .= '<option value="' . esc_attr( $code ) . '">' . esc_html( $label ) . '</option>';
+		}
+		$out .= '</select></label> <label>' . esc_html__( 'Sort by concern', 'itv' ) . ' <select data-filter="concern"><option value="">' . esc_html__( 'Original order', 'itv' ) . '</option>';
+		foreach ( array_column( $summary['data']['concerns'], 'label', 'code' ) as $code => $label ) {
+			$out .= '<option value="' . esc_attr( $code ) . '">' . esc_html( ITV_CONCERN_SHORT[ $code ] ?? $label ) . '</option>';
+		}
+		$out .= '</select></label><p class="itv-sr-only" aria-live="polite" data-filter="status"></p></form>';
+		foreach ( $questions as $code => $label ) {
+			$out .= '<section class="itv-heatmap-section" data-question="' . esc_attr( $code ) . '"><h3>' . esc_html( $label ) . '</h3>' . do_shortcode( '[itv_heatmap question="' . $code . '"]' ) . '</section>';
+		}
+		return $out . '</div>';
 	}
 );
