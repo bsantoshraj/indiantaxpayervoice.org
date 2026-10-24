@@ -21,7 +21,7 @@ updates:
       compose-images: { update-types: [minor, patch] }
 
   - package-ecosystem: terraform
-    directories: [/infra/terraform/staging, /infra/terraform/cloudflare]
+    directories: [/infra/terraform/staging, /infra/terraform/production, /infra/terraform/cloudflare]
     schedule: { interval: weekly }
     groups:
       terraform-providers: { update-types: [minor, patch] }
