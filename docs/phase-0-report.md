@@ -1,6 +1,15 @@
 # Indian Taxpayer Voice — Phase 0 report: audit, architecture and plan
 
-*Prepared 2026-10-23. Status: for owner review and approval. Nothing has been deployed to DigitalOcean.*
+*Prepared 2026-10-23 as the Phase 0 audit and plan. Sections 1–7 record the audit as it
+was; the status, decisions and plan below are kept current.*
+
+> **Status update, 2026-10-24.** Staging runs on DigitalOcean (`blr1`) behind
+> Cloudflare, deployed by CI/CD on every merge to `main`. Phase 1 is complete apart from
+> owner items (legal review, page content, Search Console, an analytics permission);
+> monitoring and alerting were moved out of Phase 1 by owner decision. Phase 2 has
+> started; the map style, chart approach and differencing protection are decided (§9).
+> Details: [Phase 1 report](phase-1-report.md), [how it works](how-it-works.md),
+> [operations](operations.md).
 
 This report covers the first deliverable in `claude.md` §14. Each finding is marked **[Verified]** (observed or tested in this environment) or **[Assumption]** (to be confirmed). Costs are planning estimates, not quotes.
 
@@ -42,7 +51,7 @@ This report covers the first deliverable in `claude.md` §14. Each finding is ma
                │           │ (1..N, identical)│          │ (atomic)
                │           │ nginx proxy      │ ┌────────┴──────────┐
                │           │ → gate (ALTCHA)  │ │ Aggregator job    │
-               │           │ → LimeSurvey 6   │ │ every 5–15 min    │
+               │           │ → LimeSurvey 7   │ │ hourly            │
                │           └────────┬─────────┘ │ RemoteControl     │
                ▼                    ▼           │ export (read-only)│
      ┌──────────────────┐ ┌──────────────────┐  └────────┬──────────┘
@@ -190,13 +199,21 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 
 **Decisions needed from the owner**
 1. Register `indiantaxpayervoice.org` and `.in` (they appear available), and decide who holds the registrar account.
+  *Update 2026-10-24: `.org` registered and on Cloudflare; `.in` not checked.*
 2. Who the legal data fiduciary is (person or entity), the contact details in the privacy notice, and the grievance officer.
+  *Update: open. The privacy notice names the initiative and `hello@indiantaxpayervoice.org`.*
 3. A trademark search and clearance for the name and logo (IP India public search; ideally a lawyer).
+  *Update: open.*
 4. DigitalOcean account access: a fresh API token for staging, scoped to the project. The current one is invalid.
+  *Update: done (new token, kept in `~/.config/itv`, mode 600). The old `~/do_token`, `~/ghcr_token` and `~/do_staging.json` from §1 are still world-readable: run `chmod 600` on them or delete them.*
 5. A Cloudflare account, and whether to use Turnstile in staging with test keys.
+  *Update: account, Zero Trust and Terraform-managed zone in place. Turnstile not configured (proof-of-work gate only).*
 6. Email provider for administration notifications. LimeSurvey's default "your answers were emailed" error text must be fixed or email configured.
+  *Update: Google Workspace mailbox `hello@indiantaxpayervoice.org`. LimeSurvey outgoing mail still unconfigured.*
 7. Quality-flag rules after the pilot (speeder threshold, bursts).
+  *Update: open, after the pilot.*
 8. A methodologist's review of the question set and income bands (re-check against the tax slabs in force).
+  *Update: open. Income bands extended on 2026-10-24 (₹24–50 lakh, ₹50 lakh–₹1 crore, above ₹1 crore) at the owner's request.*
 9. **Survey timestamps.** In LimeSurvey 7, an anonymised survey stores every date as `1980-01-01` [Verified 2026-10-23]. As a result:
    - Weekly trends cannot come from response dates. The aggregator now reports such responses as `date_not_recorded` and never invents a date.
    - The "completed implausibly fast" quality flag (claude.md §4F) is not possible without durations.
@@ -204,6 +221,9 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
    The options are:
    - **(a)** Keep anonymisation (recommended). It is also what keeps one-time invitation links unlinkable if stuffing ever forces that escalation. Derive daily or weekly trends from the change in the total between scheduled aggregator runs, and evaluate LimeSurvey's `savetimings` (per-page durations, not timestamps) for speeder detection.
    - **(b)** Turn anonymisation off while still storing no tokens or IP addresses. This gives real dates, but weakens that guarantee.
+
+   *Update: (a) kept; run-to-run trends are part of Phase 2.*
+10. **Retention.** *Decided 2026-10-24: survey responses are kept 2 years from the close of their round (privacy notice).*
 
 **Key risks**
 - **Selection bias** is inherent: the results cannot represent all taxpayers. Mitigated by honest labelling everywhere [Built].
@@ -225,23 +245,28 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 ### Phase 1 — Secure website and survey pilot
 | Item | Local | Staging (DigitalOcean) |
 |---|---|---|
-| WordPress pages, theme, logo, responsive (98/98 width checks pass) | ✅ | ☐ |
-| LimeSurvey deployed, hardened settings (anonymised, no IP, DB sessions, encryption keys) | ✅ | ☐ |
-| v1 questionnaire (12 questions incl. optional income, gender, age, employment) | ✅ | ☐ |
-| Bot gate + rate limits (on in staging/prod; off locally) | ✅ built, 21 tests | ☐ verify in browser over HTTPS |
-| End-to-end survey submission test (`tests/e2e`) | ✅ passing | ☐ |
-| Domain, TLS, Cloudflare WAF | — | ☐ |
-| Backups + restore test (staging: daily age-encrypted dumps; restore test PASS 2026-10-24, 2 s, byte-identical; off-droplet copy pending), monitoring, billing alerts | — | ◐ |
-| Privacy notice, terms, methodology reviewed (legal + editorial) | drafts | ☐ |
-- **Acceptance:** on staging, a tester completes the survey on a phone over HTTPS through the gate; the response appears in the statistics within 15 minutes; a DB restore into a scratch DB succeeds; Cloudflare and billing alerts are configured; legal sign-off on the privacy notice.
+| WordPress pages, theme, logo, responsive (98/98 width checks pass locally) | ✅ | ✅ 14 pages, no draft notices, SEO metadata; responsive re-check pending |
+| LimeSurvey deployed, hardened (anonymised, no IP, DB sessions, encryption keys, admin behind Cloudflare Access) | ✅ | ✅ |
+| v1 questionnaire (consent + 11 questions incl. optional income, gender, age, employment) | ✅ | ✅ income bands extended 2026-10-24 |
+| Bot gate + rate limits (on in staging/prod; off locally) | ✅ built, 34 tests | ✅ verified in a phone browser over HTTPS; edge rate limit too |
+| End-to-end survey submission | ✅ | ✅ phone and desktop; reached public statistics in 2 min 32 s |
+| Domain, TLS, Cloudflare CDN and WAF | — | ✅ Full (strict), managed + custom WAF rules, cache rules (Terraform) |
+| Backups + restore test | — | ✅ daily age-encrypted dumps; restore test PASS; 30-day copy off the droplet |
+| Monitoring, billing alerts | — | — out of Phase 1 scope (owner decision, #5) |
+| Privacy notice, terms, methodology | ✅ written to match the system | ◐ formal legal review pending |
+- **Acceptance:** phone test through the gate ✅; response in statistics ✅; restore into a scratch DB ✅; Cloudflare and billing alerts — moved out of scope; legal sign-off ◐. With Phase 2's differencing protection, statistics update **hourly**, so "within 15 minutes" becomes "within about 75 minutes". Full status: [Phase 1 report](phase-1-report.md).
 
 ### Phase 2 — Aggregation and public statistics
-- [x] Aggregator with validation, dedupe, suppression, atomic publish (55 tests)
+- [x] Controlled LimeSurvey integration (RemoteControl, least-privilege `stats-exporter`)
+- [x] Aggregator with validation, dedupe, suppression, atomic publish (57 tests)
+- [x] Static statistics API on its own host, cached by Cloudflare; metric definitions and refresh on the methodology page
 - [x] Counters + state table in WordPress (honest zero and suppressed states)
-- [ ] Accessible India map (licensed, Survey-of-India-compliant boundaries) with a table alternative
-- [ ] Industry × concern heat map and demographic breakdown charts
-- [ ] Publish to Spaces/CDN; document refresh intervals on the methodology page
-- **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression verified on synthetic data in staging; the map passes keyboard and screen-reader checks.
+- [ ] **Differencing protection** (decided 2026-10-24): publish hourly, round published counts to the nearest 5, test on synthetic data
+- [ ] **Accessible state/UT map** (decided: a tile-grid map, one equal tile per state/UT, no boundaries, so no Survey of India boundary licensing; keyboard and screen-reader accessible, with a table alternative)
+- [ ] **Sector × concern heat map and demographic charts** (decided: server-rendered HTML/SVG in the WordPress plugin, a data table under each, no third-party JavaScript; filters as progressive enhancement)
+- [ ] Trends from the change in totals between releases (responses carry no dates)
+- [ ] Publish to Spaces/CDN (only if production load needs it; Cloudflare already caches the static files)
+- **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression and rounding verified on synthetic data in staging; the map and charts pass keyboard and screen-reader checks.
 
 ### Phase 3 — Elasticity and resilience
 - [ ] Load tests (k6/Locust) for the Growth and Major-campaign profiles; measure LimeSurvey req/s per vCPU
@@ -262,4 +287,4 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 | Gate (`gate/tests`, run in `python:3.12-slim`) | **21 passed** |
 | Responsive check (`tests/responsive`, 14 pages × 7 widths) | **PASS, 98/98** |
 | End-to-end survey submission (`tests/e2e`, local, gate off) | **PASS** on LimeSurvey 7.5.1 |
-| Gate in a real browser, HTTPS, full flow | **Not yet run.** The widget was verified solving a challenge in a secure context; the full flow will be confirmed in staging. |
+| Gate in a real browser, HTTPS, full flow | *Update 2026-10-24:* passed on staging on a phone (response 5, bot check solved in about 3 s). Originally: not yet run; the widget was verified solving a challenge in a secure context; the full flow will be confirmed in staging. |

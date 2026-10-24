@@ -30,6 +30,18 @@ Use these as fixed decisions unless a technical incompatibility is identified:
 - Research principle: Do not present a voluntary online survey as statistically representative of India's population unless a defensible sampling design supports that conclusion.
 - Funding principle: Do not claim to provide insurance or underwrite risk. Any future insurance arrangement must involve appropriately licensed entities and be legally reviewed.
 
+Owner decisions recorded during Phases 1–2 (2026-10-24), also fixed unless the owner changes them:
+
+- Canonical production host: `indiantaxpayervoice.org` (apex); `www` redirects to it.
+- Contact and administration address: `hello@indiantaxpayervoice.org`.
+- Administration: the LimeSurvey and WordPress admins are reachable only through Cloudflare Access (email one-time code), and the origin re-verifies the Access token.
+- Survey-response retention: 2 years from the close of each survey round, then deleted (responses carry no dates).
+- Analytics: cookieless Cloudflare Web Analytics on the website only, plus Search Console. No analytics or tracking on the survey host. Google Analytics only later, with a consent banner, and never on the survey.
+- Public statistics: refreshed hourly, published counts rounded to the nearest 5, groups under 20 suppressed, to limit differencing between releases.
+- Visualisations: a tile-grid state/UT map (no geographic boundaries) and server-rendered HTML/SVG charts with data tables; no third-party JavaScript.
+- Delivery: GitHub Actions CI/CD; merges to `main` deploy staging. The repository is public, only the owner may push to `main`, and no keys or secrets may be committed.
+- Monitoring and alerting: deferred until production work starts (not part of Phase 1).
+
 Do not claim that the initiative is a registered NGO, has members, has achieved survey participation targets or has secured benefits unless verified facts are supplied.
 
 ## 3. Begin by inspecting the existing environment
@@ -339,7 +351,7 @@ Build an accessible India state/UT map and an industry-versus-concern heat map.
 
 Requirements:
 
-- Use a properly licensed map asset.
+- Use a properly licensed map asset. (Decided 2026-10-24: a tile-grid map with one equal tile per state/UT and no boundaries, which needs no boundary data or Survey of India licensing.)
 - Make the map keyboard-accessible and provide a tabular alternative.
 - Provide filters and explanatory tooltips.
 - Allow users to understand counts, percentages and denominators.
@@ -489,7 +501,7 @@ Do not deploy or modify production resources during this phase without authoriza
 - Configure domain, TLS and CDN/WAF.
 - Build the first questionnaire.
 - Define retention and consent practices.
-- Establish database backups and monitoring.
+- Establish database backups and monitoring. (Owner decision 2026-10-24: monitoring and alerting move to production work; backups and restore tests stay in Phase 1.)
 - Create methodology, privacy and terms pages.
 - Test the entire response-collection workflow.
 
