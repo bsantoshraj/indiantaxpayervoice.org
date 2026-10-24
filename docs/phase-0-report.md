@@ -278,8 +278,8 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - [x] Cloudflare for production hosts (one `environments` map): DNS, Access, WAF, rate limiting, cache rules; `www` → apex redirect at the origin
 - [x] CI/CD promotion job: the images that passed staging are pulled from GHCR (no rebuild), deployed after owner approval
 - [x] Production `.env` generated on the droplet; first deploy with the GHCR images of `afb7437`; smoke tests
-- [ ] Survey opened by controlled release (`ITV_SURVEY_OPEN` in `infra/env/production.env`; owner decision, 2026-10-24)
-- [ ] Production backups pulled to the admin machine; restore test on production
+- [x] Survey opened by controlled release on 2026-10-24 (`ITV_SURVEY_OPEN=1`, PR #33, promoted with owner approval; production smoke tests pass)
+- [x] Production backups: daily encrypted dumps on the droplet, daily copy to the admin machine (`~/itv-backups/production`); restore test PASS
 - Open before real respondents are invited: legal review, privacy review (Phase 2), a methodologist's review; monitoring and alerting deferred by owner decision
 
 ### Phase 3 — Elasticity and resilience
