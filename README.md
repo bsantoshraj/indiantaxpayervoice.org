@@ -16,6 +16,7 @@ representative of all taxpayers.
 | [Phase 0 report](docs/phase-0-report.md) | see the architecture decisions, threat model, cost estimates and phase plan |
 | [Owner backlog](docs/owner-backlog.md) | see the decisions, accounts, content and reviews waiting on the owner |
 | [Phase 1 report](docs/phase-1-report.md) | see what is done, what was verified, and what remains before Phase 1 is complete |
+| [Phase 2 report](docs/phase-2-report.md) | see the public statistics, map and heat maps, and what remains in Phase 2 |
 | `claude.md` (private, not in this repository) | the full project brief and requirements, kept by the owner |
 
 ## Environments
