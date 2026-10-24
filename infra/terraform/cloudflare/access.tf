@@ -33,7 +33,7 @@ resource "cloudflare_zero_trust_access_identity_provider" "email_otp" {
 
 resource "cloudflare_zero_trust_access_policy" "survey_admins" {
   account_id       = local.account_id
-  name             = "LimeSurvey administrators"
+  name             = "Site administrators (LimeSurvey and WordPress)"
   decision         = "allow"
   include          = [for e in var.survey_admin_emails : { email = { email = e } }]
   session_duration = "8h"
@@ -44,6 +44,27 @@ resource "cloudflare_zero_trust_access_application" "staging_survey_admin" {
   name                       = "LimeSurvey admin (staging)"
   type                       = "self_hosted"
   domain                     = var.staging_survey_admin_host
+  session_duration           = "8h"
+  allowed_idps               = [cloudflare_zero_trust_access_identity_provider.email_otp.id]
+  auto_redirect_to_identity  = true
+  app_launcher_visible       = false
+  http_only_cookie_attribute = true
+  same_site_cookie_attribute = "lax"
+  policies                   = [{ id = cloudflare_zero_trust_access_policy.survey_admins.id, precedence = 1 }]
+}
+
+# WordPress admin and login behind the same Access policy. Path-based: the rest
+# of the site stays public. Nothing public uses admin-ajax.php (checked), so all
+# of /wp-admin is covered. Caddy re-checks the token at the origin (forward_auth
+# to the gate), so the edge app is not the only lock.
+resource "cloudflare_zero_trust_access_application" "staging_wordpress_admin" {
+  account_id = local.account_id
+  name       = "WordPress admin (staging)"
+  type       = "self_hosted"
+  destinations = [
+    { type = "public", uri = "${var.staging_wordpress_host}/wp-admin" },
+    { type = "public", uri = "${var.staging_wordpress_host}/wp-login.php" },
+  ]
   session_duration           = "8h"
   allowed_idps               = [cloudflare_zero_trust_access_identity_provider.email_otp.id]
   auto_redirect_to_identity  = true

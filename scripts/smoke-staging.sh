@@ -26,6 +26,10 @@ for path in /index.php/admin /admin "/index.php?r=admin/authentication/sa/login"
 done
 check "admin host requires Cloudflare Access" "302 *.cloudflareaccess.com" \
   "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$admin/" | sed -E 's#https://([^/]+)/.*#\1#')"
+check "WordPress admin requires Cloudflare Access" "302 *.cloudflareaccess.com" \
+  "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$wp/wp-login.php" | sed -E 's#https://([^/]+)/.*#\1#')"
+check "WAF blocks /xmlrpc.php" 403 "$(code -X POST "$wp/xmlrpc.php")"
+check "WAF blocks writes to statistics" 403 "$(code -X POST "$stats/v1/statistics/summary")"
 check "stats summary" 200 "$(code "$stats/v1/statistics/summary")"
 
 generated=$(curl -s --max-time 20 "$stats/v1/statistics/summary" | python3 -c 'import sys,json; print(json.load(sys.stdin)["meta"]["generated_at"])' 2>/dev/null)

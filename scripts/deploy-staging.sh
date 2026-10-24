@@ -17,7 +17,7 @@ access_vars=()
 if [[ -f "$cf_tf/terraform.tfstate" ]]; then
   out() { terraform -chdir="$cf_tf" output -raw "$1"; }
   access_vars=("SURVEY_ADMIN_HOST=$(out staging_survey_admin_host)" "ITV_ACCESS_TEAM_DOMAIN=$(out access_team_domain)"
-               "ITV_ACCESS_AUD=$(out staging_survey_admin_aud)" "ITV_ACCESS_ALLOWED_EMAILS=$(out survey_admin_emails)")
+               "ITV_ACCESS_AUD=$(out staging_access_audiences)" "ITV_ACCESS_ALLOWED_EMAILS=$(out survey_admin_emails)")
 else
   echo "Warning: no Cloudflare Terraform state; the LimeSurvey admin will refuse all requests." >&2
 fi

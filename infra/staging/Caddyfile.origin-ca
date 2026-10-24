@@ -26,6 +26,12 @@
 
 {$WP_HOST} {
 	import security
+	# WordPress admin and login: Cloudflare Access at the edge, token re-verified
+	# here by the gate (same check as the LimeSurvey admin).
+	@wpadmin path /wp-admin /wp-admin/* /wp-login.php
+	forward_auth @wpadmin gate:8000 {
+		uri /access/check
+	}
 	reverse_proxy wordpress:80 {
 		# Visitor IP as resolved via trusted_proxies (Cloudflare), for rate limits.
 		header_up X-Real-IP {client_ip}
