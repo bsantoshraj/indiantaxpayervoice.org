@@ -11,6 +11,7 @@ import fcntl
 import logging
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .aggregate import Policy, aggregate
@@ -18,6 +19,7 @@ from .ingest import IngestError, Limits, parse_export_text
 from .limesurvey import LimeSurveyError, RemoteControl
 from .publish import PublishRefused, check_drop, publish
 from .schema import load_schema
+from .trends import load_history, record_total, save_history, weekly_trend
 
 log = logging.getLogger("itv_aggregator")
 
@@ -98,8 +100,13 @@ def _run(args, schema, out_dir: Path) -> int:
         report.conflicting_duplicates,
     )
     aggregates = aggregate(responses, schema, Policy(min_cohort=args.min_cohort, rounding=args.rounding))
+    # Trends from the change in the published (rounded) total between releases.
+    history = record_total(load_history(out_dir), datetime.now(timezone.utc).date(),
+                           aggregates["summary"]["valid_responses"])
+    aggregates["trends"] = weekly_trend(history, args.min_cohort)
     release = publish(aggregates, out_dir, survey_version=schema.survey_version,
                       min_cohort=args.min_cohort, rounding=args.rounding)
+    save_history(out_dir, history)  # only once the release with these totals is live
     log.info("published release %s", release.name)
     return 0
 

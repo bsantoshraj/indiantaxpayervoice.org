@@ -27,7 +27,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Production runs get their own group, so one waiting for approval never holds
+  # up staging deploys (pushes to main) or the reverse.
+  group: ci-${{ github.ref }}-${{ inputs.environment || 'push' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:

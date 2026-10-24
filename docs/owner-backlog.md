@@ -2,7 +2,7 @@
 
 Action items that need the owner: decisions, accounts, content and reviews that
 cannot be done in code. Engineering work is tracked in GitHub issues (label
-`backlog`) and in the phase reports. Last updated: 2026-10-24.
+`backlog`) and in the phase reports. Last updated: 2026-10-24 (end of day).
 
 ## Blocking Phase 1 sign-off
 
@@ -20,6 +20,8 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 | 5 | **Cloudflare Web Analytics** | Add *Account › Account Web Analytics › Edit* to the existing Cloudflare token (its value does not change) |
 | 6 | **Backup private key** | Keep an offline copy of `~/.config/itv/backup-age.key` (for example in a password manager); without it, backups are unreadable |
 | 7 | **Old credential files** | `~/do_token`, `~/ghcr_token` and `~/do_staging.json` are readable by every user on the admin machine: `chmod 600` them or delete them |
+| 18 | **DNSSEC** | Cloudflare dashboard → DNS → Settings → *Enable DNSSEC*, then add the DS record it shows at your domain registrar |
+| 19 | **DMARC to quarantine** | Around 7 November 2026, if DMARC reports to `hello@` show only Google sending and passing: ask to set `dmarc_policy = "quarantine"` |
 
 ## Decisions
 
@@ -43,7 +45,7 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 
 | # | Item | What is needed |
 |---|---|---|
-| 16 | **Open the survey (controlled release)** | When ready: a pull request setting `ITV_SURVEY_OPEN=1` in `infra/env/production.env`, then approve the production deployment ([environments.md](environments.md#opening-the-production-survey-controlled-release)) |
+| 16 | **Survey controlled release** | Opened 2026-10-24 (PR #33). To close it again: `ITV_SURVEY_OPEN=0` in `infra/env/production.env`, then promote and approve ([ci-cd.md](ci-cd.md#open-or-close-the-production-survey-controlled-release)) |
 | 17 | **Approve production deployments** | Each "Run workflow → production" waits for your approval in GitHub |
 
 ## Deferred by owner decision
@@ -51,6 +53,9 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 - Monitoring and alerting, including the billing alert: until production work starts (#5).
 
 ## Done
+
+- 2026-10-24: external security review; fixes live (account names and version hidden, framing protection, SPF/DMARC/CAA, Bot Fight Mode off).
+- 2026-10-24: production live on indiantaxpayervoice.org; survey opened by controlled release (before the legal, privacy and methodologist reviews, by owner decision).
 
 - 2026-10-24: survey-response retention set to 2 years from the close of each round.
 - 2026-10-24: income bands extended (₹24–50 lakh, ₹50 lakh–₹1 crore, above ₹1 crore).

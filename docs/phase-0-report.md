@@ -3,16 +3,20 @@
 *Prepared 2026-10-23 as the Phase 0 audit and plan. Sections 1–7 record the audit as it
 was; the status, decisions and plan below are kept current.*
 
-> **Status update, 2026-10-24 (evening).** Staging runs on DigitalOcean (`blr1`) behind
-> Cloudflare, deployed by CI/CD on every merge to `main`.
+> **Status, 2026-10-24 (end of day).**
+> **Production is live** at https://indiantaxpayervoice.org (droplet `itv-prod-1`, same
+> layout as staging, images promoted from staging with owner approval) and the
+> **survey is open** (controlled release, PR #33). Staging deploys on every merge.
 > **Phase 1:** complete except owner items (legal review, page content, Search Console,
-> an analytics permission); monitoring and alerting moved out by owner decision.
-> **Phase 2:** statistics API, differencing protection, tile-grid map and five heat maps
-> live on staging; trends, filters, a screen-reader test and the privacy review remain.
-> **Production:** being prepared on the same layout (owner request, 2026-10-24).
-> Details: [Phase 1 report](phase-1-report.md), [Phase 2 report](phase-2-report.md),
-> [owner backlog](owner-backlog.md), [how it works](how-it-works.md),
-> [operations](operations.md).
+> analytics permission); monitoring and alerting moved out by owner decision.
+> **Phase 2:** all code done and live on both environments (rounded hourly statistics,
+> tile-grid map, heat maps with filters, weekly trends); staging dry run passed;
+> remaining: a manual screen-reader test and the privacy review.
+> **Security:** external review done; fixes live (account names and version hidden,
+> framing protection, SPF/DMARC/CAA, Bot Fight Mode pinned off).
+> Details: [Phase 1](phase-1-report.md), [Phase 2](phase-2-report.md),
+> [environments](environments.md), [owner backlog](owner-backlog.md),
+> [how it works](how-it-works.md), [operations](operations.md).
 
 This report covers the first deliverable in `claude.md` §14. Each finding is marked **[Verified]** (observed or tested in this environment) or **[Assumption]** (to be confirmed). Costs are planning estimates, not quotes.
 
@@ -140,17 +144,17 @@ Spaces/CDN /v1/statistics/*.json ◄── WordPress shortcodes (server fetch, 6
 
 | # | Threat (STRIDE) | Mitigation | Status |
 |---|---|---|---|
-| T1 | Ballot stuffing by bots or scripts (Tampering) | ALTCHA proof-of-work gate with single-use challenges and bounded passes; Turnstile + Cloudflare WAF in production; rate limits; quality flags (speeders, bursts, honeypot) | Gate + rate limits built; flags pending pilot data |
-| T2 | Re-identification from published statistics (Info disclosure) | Small-cohort threshold of 20 + complementary suppression; demographics never crossed with state or each other; no free text, IDs or times; weekly trends only | Built + 53 aggregator tests |
+| T1 | Ballot stuffing by bots or scripts (Tampering) | ALTCHA proof-of-work gate with single-use challenges and bounded passes; Turnstile + Cloudflare WAF in production; rate limits; quality flags (speeders, bursts, honeypot) | Gate + edge and origin rate limits + managed WAF built (Bot Fight Mode off: owner decision); flags pending pilot data |
+| T2 | Re-identification from published statistics (Info disclosure) | Small-cohort threshold of 20 + complementary suppression; demographics never crossed with state or each other; no free text, IDs or times; weekly trends only | Built + 67 aggregator tests; staging dry run passed |
 | T3 | Differencing across successive releases | Refresh on a schedule (not per response); cumulative counts only; review before launch | **Residual risk**: needs privacy review |
 | T4 | Free text containing personal data | Never published; on-screen warning; redaction process before any quoted use; restricted export access | Process to be written |
-| T5 | LimeSurvey admin takeover (Spoofing / Elevation) | `/admin` behind Cloudflare Access/VPN, MFA, unique admin accounts, no shared logins, audit log of exports | Production config |
-| T6 | DB exposure | Managed DB in private VPC, trusted sources only, TLS, no public endpoint; WP has no route to it | Mirrored locally (internal network) |
+| T5 | LimeSurvey admin takeover (Spoofing / Elevation) | `/admin` behind Cloudflare Access/VPN, MFA, unique admin accounts, no shared logins, audit log of exports | Built: LimeSurvey and WordPress admins behind Cloudflare Access (email code), token re-verified at the origin; public survey host refuses admin routes (WAF + nginx) |
+| T6 | DB exposure | Managed DB in private VPC, trusted sources only, TLS, no public endpoint; WP has no route to it | Staging/production: host MariaDB reachable only from the Docker networks, port 3306 closed (managed DB deferred, owner decision) |
 | T7 | Secret leakage | `.env` gitignored (mode 600); secrets never logged (tested); production secrets in a secrets store | Built |
 | T8 | Spreadsheet formula injection in exports | Public CSV cells sanitised (tested). LimeSurvey's own exports must be opened safely by staff | Built / staff guidance |
-| T9 | Loss of encryption keys or data | Keys backed up separately from DB backups; PITR; restore test monthly | Production runbook |
+| T9 | Loss of encryption keys or data | Keys backed up separately from DB backups; PITR; restore test monthly | Built: daily age-encrypted dumps plus a separate `.env` backup; restore test passes on staging and production |
 | T10 | Open redirect / XSS on the gate | `next` restricted to `/index.php/…`; output escaped; CSP with `frame-ancestors 'none'` (tested) | Built |
-| T11 | DoS / viral surge | CDN-cached site; static statistics; LB + horizontal survey replicas; Cloudflare DDoS | Design |
+| T11 | DoS / viral surge | CDN-cached site; static statistics; LB + horizontal survey replicas; Cloudflare DDoS | Partly built: CDN caching, static statistics, edge rate limiting, Cloudflare DDoS; replicas/LB are Phase 3 |
 | T12 | Third-party processors seeing personal data | Cloudflare (IP addresses) listed in the privacy notice; no analytics until consent design is done | Legal review |
 
 **Privacy baseline:** no PAN, Aadhaar, exact salary, employer or address; IP addresses not stored (`ipaddr=N`); anonymised survey (no tokens); optional demographics with "Prefer not to say"; contact sign-up (when built) kept separate from responses. A **legal review of the Digital Personal Data Protection Act, 2023 and its Rules (including commencement dates)** is required before launch.
@@ -251,7 +255,7 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 | WordPress pages, theme, logo, responsive (98/98 width checks pass locally) | ✅ | ✅ 14 pages, no draft notices, SEO metadata; responsive re-check pending |
 | LimeSurvey deployed, hardened (anonymised, no IP, DB sessions, encryption keys, admin behind Cloudflare Access) | ✅ | ✅ |
 | v1 questionnaire (consent + 11 questions incl. optional income, gender, age, employment) | ✅ | ✅ income bands extended 2026-10-24 |
-| Bot gate + rate limits (on in staging/prod; off locally) | ✅ built, 34 tests | ✅ verified in a phone browser over HTTPS; edge rate limit too |
+| Bot gate + rate limits (on in staging/prod; off locally) | ✅ built, 38 tests | ✅ verified in a phone browser over HTTPS; edge rate limit too |
 | End-to-end survey submission | ✅ | ✅ phone and desktop; reached public statistics in 2 min 32 s |
 | Domain, TLS, Cloudflare CDN and WAF | — | ✅ Full (strict), managed + custom WAF rules, cache rules (Terraform) |
 | Backups + restore test | — | ✅ daily age-encrypted dumps; restore test PASS; 30-day copy off the droplet |
@@ -261,15 +265,17 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 
 ### Phase 2 — Aggregation and public statistics
 - [x] Controlled LimeSurvey integration (RemoteControl, least-privilege `stats-exporter`)
-- [x] Aggregator with validation, dedupe, suppression, atomic publish (57 tests)
+- [x] Aggregator with validation, dedupe, suppression, rounding, trends, atomic publish (67 tests)
 - [x] Static statistics API on its own host, cached by Cloudflare; metric definitions and refresh on the methodology page
 - [x] Counters + state table in WordPress (honest zero and suppressed states)
 - [x] **Differencing protection**: hourly releases, counts rounded to the nearest 5, whole percentages from rounded figures; synthetic-data tests (#26)
 - [x] **Accessible state/UT map**: tile-grid map (`[itv_state_map]`), one equal tile per state/UT, no boundaries; each tile focusable with a tooltip and a screen-reader description; distinct "not shown" and "no responses" tiles; the state table remains the text alternative. Text contrast at least 5.2:1
 - [x] **Sector, income, gender, age and employment × concern heat maps** (`[itv_heatmap question=…]`): server-rendered tables shaded by percentage, so each is its own text alternative; no third-party JavaScript; each question shown alone, never crossed with state or another question
-- [ ] Filters and explanatory tooltips (progressive enhancement)
-- [ ] Trends from the change in totals between releases (responses carry no dates)
+- [x] Filters and explanatory tooltips (progressive enhancement: question selector, sort by concern, cell tooltips)
+- [x] Trends from the change in the published total between releases (responses carry no dates); weekly, small weeks hidden
 - [ ] Publish to Spaces/CDN (only if production load needs it; Cloudflare already caches the static files)
+- [x] Staging dry run on synthetic data (not published): rounding, suppression, no IDs or free text
+- [ ] Manual screen-reader test; privacy review before launch
 - **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression and rounding verified on synthetic data in staging; the map and charts pass keyboard and screen-reader checks. Status: [Phase 2 report](phase-2-report.md).
 
 ### Production rollout (owner request, 2026-10-24)
@@ -278,8 +284,8 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - [x] Cloudflare for production hosts (one `environments` map): DNS, Access, WAF, rate limiting, cache rules; `www` → apex redirect at the origin
 - [x] CI/CD promotion job: the images that passed staging are pulled from GHCR (no rebuild), deployed after owner approval
 - [x] Production `.env` generated on the droplet; first deploy with the GHCR images of `afb7437`; smoke tests
-- [ ] Survey opened by controlled release (`ITV_SURVEY_OPEN` in `infra/env/production.env`; owner decision, 2026-10-24)
-- [ ] Production backups pulled to the admin machine; restore test on production
+- [x] Survey opened by controlled release on 2026-10-24 (`ITV_SURVEY_OPEN=1`, PR #33, promoted with owner approval; production smoke tests pass)
+- [x] Production backups: daily encrypted dumps on the droplet, daily copy to the admin machine (`~/itv-backups/production`); restore test PASS
 - Open before real respondents are invited: legal review, privacy review (Phase 2), a methodologist's review; monitoring and alerting deferred by owner decision
 
 ### Phase 3 — Elasticity and resilience
@@ -287,6 +293,8 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - [ ] Horizontal survey replicas behind the LB; shared gate store
 - [ ] Failure drills: DB failover, aggregator outage, restore from backup (*partly done: the backup restore test passes on staging in about 2 s*)
 - [x] Edge protection groundwork: Cloudflare cache rules, tiered cache, managed and custom WAF rules, edge rate limiting (Terraform)
+- [x] External security review of production (2026-10-24) and fixes: account-name and version leaks closed, framing protection and Permissions-Policy, SPF `-all`, DMARC (`p=none`, reports), CAA, Bot Fight Mode pinned off
+- [ ] Owner: DNSSEC (Cloudflare + registrar DS record); DMARC to `quarantine` after two weeks of clean reports
 - **Acceptance:** the Growth profile sustains its target with p95 page time under 1.5 s and zero lost submissions; restore time measured and documented.
 
 ### Phase 4 — Growth and research operations

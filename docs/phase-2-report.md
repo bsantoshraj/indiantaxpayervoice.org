@@ -2,8 +2,7 @@
 
 **Status on 2026-10-24:** the aggregation pipeline, the public statistics API, the
 differencing protection, the tile-grid state/UT map and five concern heat maps are
-built and live on staging. **Phase 2 is not complete:** trends over time, filters and
-tooltips for the heat maps, a manual screen-reader check, and the privacy review
+built and live on staging and production, together with weekly trends and heat-map filters, and the staging dry run passed. **Phase 2 is not complete:** a manual screen-reader check, and the privacy review
 before launch remain. See [Remaining work](#6-remaining-work-to-close-phase-2).
 
 Phase 2 in the project brief (§12) is "Aggregation and public statistics"; the
@@ -18,9 +17,9 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 |---|---|---|
 | Controlled LimeSurvey integration | ✅ | RemoteControl API, called over the internal network by a `stats-exporter` account that can only export this one survey. No public route to raw data |
 | Precomputed aggregate statistics | ✅ | Hourly aggregator: validation, dedupe, small-group suppression (k = 20) with complementary suppression, rounding, atomic publish; a suspicious drop keeps the previous release |
-| Public statistics API / static publishing | ✅ | `stats-staging…/v1/statistics/{summary, states, industries, breakdowns, distributions, trends}` and `states.csv`; read-only (WAF allows only GET/HEAD), cached by Cloudflare per the origin's headers |
-| Public counters and heat maps | ◐ | Counters ✅, tile-grid map ✅, heat maps by sector, income, gender, age and employment ✅. Trends ❌ |
-| Suppression and privacy tests | ✅ | 61 aggregator tests, including synthetic-data tests for rounding and differencing |
+| Public statistics API / static publishing | ✅ | `stats.indiantaxpayervoice.org` (production) and `stats-staging…` `/v1/statistics/{summary, states, industries, breakdowns, distributions, trends}` and `states.csv`; read-only (WAF allows only GET/HEAD), cached by Cloudflare per the origin's headers |
+| Public counters and heat maps | ✅ | Counters, tile-grid map, heat maps by sector, income, gender, age and employment, and weekly trends |
+| Suppression and privacy tests | ✅ | 67 aggregator tests (rounding, differencing, trends), plus the staging dry run on synthetic data |
 | Metric definitions and refresh intervals | ✅ | Methodology page: counting rules, suppression, rounding, hourly refresh, limitations, corrections |
 
 ## 2. Map and heat-map requirements (brief §8)
@@ -29,7 +28,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 |---|---|---|
 | Properly licensed map asset | ✅ | Tile-grid map: one equal tile per state/UT, no boundaries, so no boundary data or Survey of India licensing (owner decision) |
 | Keyboard-accessible, with a tabular alternative | ✅ | Tiles are focusable with a visible focus ring and tooltip; the state table stays below the map; heat maps are real tables |
-| Filters and explanatory tooltips | ◐ | Map tooltips ✅; heat-map filters ❌ |
+| Filters and explanatory tooltips | ✅ | Map tooltips; heat maps: choose the question and sort groups by a concern (`[itv_heatmaps]`), cell tooltips such as "51% of '₹4 lakh to ₹12 lakh' chose Health costs (350 responses in this group)"; without JavaScript all tables show |
 | Counts, percentages and denominators understandable | ✅ | Each tile and heat-map row shows its count; captions state the denominator; rounding is explained on the page and in the methodology |
 | Respondent-reported state, never inferred from IP | ✅ | Only the answered state is used; stated on the methodology page |
 | Voluntary nature and limitations labelled | ✅ | "Not statistically representative" note under every statistic |
@@ -45,7 +44,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 | Criterion | Status | Evidence |
 |---|---|---|
 | No public file contains IDs, timestamps finer than a week, or free text | ✅ | Tested in the aggregator suite; the only time in a release is the refresh time (minute precision) |
-| Suppression verified on synthetic data in staging | ◐ | Verified on synthetic releases **locally** (1,112 and 1,200 responses): small groups hidden, complementary suppression, rounding. Not run on staging, to avoid publishing fabricated figures on a public URL; a staging dry run that does not publish is proposed instead |
+| Suppression verified on synthetic data in staging | ✅ | **Staging dry run, 2026-10-24**: staging's deployed aggregator image (`b96a776`) on 1,035 synthetic responses, written to a temporary folder, never published. 337 published counts all multiples of 5, none between 1 and 19, all percentages whole; marker response IDs and a marker comment absent from every file; only timestamp the refresh time (minute precision); small states (12, 5, 1) hidden, and Kerala (21) hidden by complementary suppression because those three sum to 18; rare income band hidden; CSV formula-safe. Live staging statistics unchanged; output deleted |
 | Map and charts pass keyboard and screen-reader checks | ◐ | Keyboard focus and tooltip verified in a real browser; screen-reader text present for every tile and cell. **Manual screen-reader test (NVDA or TalkBack) not done** |
 
 ## 4. What was built
@@ -59,7 +58,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 
 | Check | Result |
 |---|---|
-| Aggregator tests | 61 passed (rounding, differencing, suppression on exact counts, trends) |
+| Aggregator tests | 67 passed (rounding, differencing, suppression on exact counts, trends) |
 | Synthetic releases (local) | Map: 12 states shown in five shades, 4 hidden, 20 with no responses; values rounded (22 → 20, 24 → 25). Heat maps: top income bands and "another gender identity" cells hidden; complementary suppression visible |
 | Responsive check, 14 pages × 7 widths | 98/98 PASS after the map and heat maps |
 | Phone layout | No horizontal scroll at 375 px (a 444 px overflow from screen-reader text in scrollable tables was found and fixed) |
@@ -71,9 +70,9 @@ insufficient data is a requirement; hourly releases blur when it happened.
 
 ## 6. Remaining work to close Phase 2
 
-- [ ] **Trends over time** from the change in totals between releases (responses carry no dates), with the same suppression and rounding
-- [ ] **Heat-map filters** (for example, choose a question or concern) as progressive enhancement, without creating new cross-tabulations
+- [x] **Trends over time**: weekly change in the published (rounded) total between releases; weeks under 20 new responses hidden; a falling total starts a new series; history kept outside the published release (`[itv_trends]`, 6 tests)
+- [x] **Heat-map filters**: question selector and sort by concern, as progressive enhancement; only hides, shows and reorders tables already published, so no new combination of answers is computed
 - [ ] **Manual screen-reader test** of the map and heat maps (NVDA on Windows or TalkBack on Android)
 - [ ] **Privacy review before launch** (brief §8): minimum group size, rounding, the zero-versus-hidden signal, and the free-text comments, ideally by someone independent
-- [ ] **Staging verification without publishing**: run the aggregator on synthetic data into a temporary directory on staging and check the output, so no fabricated figures appear publicly
+- [x] **Staging verification without publishing**: done 2026-10-24 (see §3); all checks passed
 - [ ] Optional: publish statistics to Spaces/CDN if production traffic needs it (Cloudflare already caches the static files)
