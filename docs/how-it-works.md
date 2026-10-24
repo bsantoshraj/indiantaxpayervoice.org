@@ -24,17 +24,19 @@ WordPress and LimeSurvey are deliberately **separate**: different databases,
 different Docker networks, and WordPress has no route to the survey database. The
 website only ever sees the published, already-aggregated statistics.
 
-## Hostnames (staging)
+## Hostnames
 
-| Hostname | Serves | Cached by Cloudflare |
-|---|---|---|
-| `staging.indiantaxpayervoice.org` | Website | Pages 10 min (anonymous visitors only) |
-| `survey-staging.indiantaxpayervoice.org` | Survey (behind the gate) | Never |
-| `survey-admin-staging.indiantaxpayervoice.org` | LimeSurvey admin (Cloudflare Access) | Never |
-| `stats-staging.indiantaxpayervoice.org` | Public statistics | As the origin says (5 min) |
+| Role | Production | Staging | Cached by Cloudflare |
+|---|---|---|---|
+| Website | `indiantaxpayervoice.org` (`www.` redirects) | `staging.indiantaxpayervoice.org` | Pages 10 min (anonymous visitors only) |
+| Survey (behind the gate) | `survey.indiantaxpayervoice.org` | `survey-staging.indiantaxpayervoice.org` | Never |
+| LimeSurvey admin (Cloudflare Access) | `survey-admin.indiantaxpayervoice.org` | `survey-admin-staging.indiantaxpayervoice.org` | Never |
+| Public statistics | `stats.indiantaxpayervoice.org` | `stats-staging.indiantaxpayervoice.org` | As the origin says (5 min); refreshed hourly |
 
-All are proxied by Cloudflare (SSL mode Full (strict)). The droplet's firewall accepts
-HTTPS only from Cloudflare's address ranges, so none of these can be reached by IP.
+All are proxied by Cloudflare (SSL mode Full (strict)). Each droplet's firewall
+accepts HTTPS only from Cloudflare's address ranges, so none of these can be reached
+by IP. Only the production website is indexed by search engines; every other host
+sends `noindex`. Differences between the environments: [environments.md](environments.md).
 
 ```mermaid
 flowchart LR
