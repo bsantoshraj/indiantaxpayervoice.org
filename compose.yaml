@@ -21,7 +21,7 @@ services:
   wp-db:
     <<: *restart
     profiles: [localdb]
-    image: mariadb:11.8.9
+    image: mariadb:13.0.2
     environment:
       MARIADB_DATABASE: ${WP_DB_NAME}
       MARIADB_USER: ${WP_DB_USER}
@@ -90,7 +90,7 @@ services:
   ls-db:
     <<: *restart
     profiles: [localdb]
-    image: mariadb:11.8.9
+    image: mariadb:13.0.2
     environment:
       MARIADB_DATABASE: ${LS_DB_NAME}
       MARIADB_USER: ${LS_DB_USER}
