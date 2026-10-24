@@ -83,5 +83,8 @@ ssh deploy@<ip> 'sudo /opt/itv/infra/staging/restore-test.sh /dev/stdin' < ~/.co
 It restores the newest backups into scratch databases (decrypted data and key
 stay in `/dev/shm`), re-dumps them and requires a byte-identical match, checks
 WordPress and the active survey, confirms the secrets backup holds the current
-LimeSurvey keys, and drops the scratch databases. Not yet done: copying backups
-off the droplet (planned: a separate Spaces bucket).
+LimeSurvey keys, and drops the scratch databases.
+
+`scripts/pull-staging-backups.sh <ip>` copies the encrypted files to
+`~/itv-backups/staging` on the admin machine (still encrypted). Planned: a
+separate Spaces bucket as the off-site copy.
