@@ -14,7 +14,7 @@ costs and threat model see the [Phase 0 report](phase-0-report.md).
 | **Survey gate** | Bot check before anyone can open the survey; also verifies Cloudflare Access tokens for the admin | `gate/` (Python, ALTCHA proof-of-work, optional Cloudflare Turnstile) |
 | **Survey proxy** | Front door of the survey: asks the gate, rate-limits submissions, refuses admin routes on the public host | nginx 1.30 |
 | **Survey** | The questionnaire and its responses | LimeSurvey 7.5 (anonymised: no IP, no tokens, no dates) |
-| **Aggregator** | Every 5 minutes: exports responses, validates them, suppresses small groups, publishes static statistics | `aggregator/` (Python, standard library only) |
+| **Aggregator** | Hourly: exports responses, validates them, suppresses small groups, rounds counts to 5, publishes static statistics | `aggregator/` (Python, standard library only) |
 | **Statistics server** | Serves the published JSON/CSV files, read-only | nginx 1.30 |
 | **Databases** | One for WordPress (no survey data), one for LimeSurvey | MariaDB (containers locally, host MariaDB on staging) |
 | **Edge** | DNS, TLS, CDN cache, HTTP→HTTPS, admin login (Access) | Cloudflare |
@@ -47,7 +47,7 @@ flowchart LR
     C --> ST[Statistics<br/>nginx]
     SP -->|auth_request| G[Gate]
     SP --> LS[LimeSurvey]
-    AGG[Aggregator<br/>every 5 min] -->|RemoteControl API| LS
+    AGG[Aggregator<br/>hourly] -->|RemoteControl API| LS
     AGG -->|static files| ST
     WP -->|server-side fetch| ST
     WP --- WDB[(WordPress DB)]
@@ -91,7 +91,7 @@ required; employment, income band, gender, age band, financial buffer, health
 cover, priorities and a free-text comment are optional.
 
 ### 3. Turning responses into public statistics
-Every 5 minutes the aggregator exports responses over LimeSurvey's RemoteControl
+Every hour the aggregator exports responses over LimeSurvey's RemoteControl
 API, using a `stats-exporter` account that can only export this one survey. Before
 anything is published:
 
@@ -101,6 +101,9 @@ anything is published:
   cannot be worked out by subtraction);
 - no response IDs, timestamps or free text ever leave the aggregator;
 - CSV cells are sanitised against spreadsheet formula injection.
+- published counts are rounded to the nearest 5 and percentages are whole numbers from the
+  rounded figures; with hourly releases this limits working out one response by
+  comparing consecutive releases (differencing).
 
 A run that looks wrong (missing columns, LimeSurvey unreachable, valid responses
 falling by more than 10 %) **keeps the previous release**. Releases are written to a

@@ -72,10 +72,11 @@ function itv_stats_meta_note( $meta ) {
 		esc_html( $meta['representativeness'] ?? '' ),
 		esc_html(
 			sprintf(
-				/* translators: 1: refresh time (UTC), 2: minimum group size */
-				__( 'Last refreshed %1$s UTC. Groups with fewer than %2$d responses are not shown.', 'itv' ),
+				/* translators: 1: refresh time (UTC), 2: minimum group size, 3: rounding base */
+				__( 'Last refreshed %1$s UTC; updated hourly. Groups with fewer than %2$d responses are not shown, and counts are rounded to the nearest %3$d.', 'itv' ),
 				str_replace( array( 'T', 'Z' ), array( ' ', '' ), $meta['generated_at'] ?? '' ),
-				(int) ( $meta['min_cohort'] ?? 0 )
+				(int) ( $meta['min_cohort'] ?? 0 ),
+				(int) ( $meta['rounding'] ?? 5 )
 			)
 		),
 		esc_url( $methodology ),
@@ -132,7 +133,7 @@ add_shortcode(
 			$status = $row['status'] ?? 'suppressed';
 			if ( 'published' === $status ) {
 				$count = number_format_i18n( (int) $row['count'] );
-				$pct   = number_format_i18n( (float) $row['percent'], 1 ) . '%';
+				$pct   = number_format_i18n( (float) $row['percent'] ) . '%';   // whole numbers (rounded data)
 			} else {
 				$count = $labels[ $status ] ?? $labels['suppressed'];
 				$pct   = '—';

@@ -51,6 +51,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", default=os.environ.get("ITV_OUT_DIR", "public-stats"))
     parser.add_argument("--csv", help="read a LimeSurvey CSV export file instead of the API")
     parser.add_argument("--min-cohort", type=int, default=int(os.environ.get("ITV_MIN_COHORT", "20")))
+    parser.add_argument("--rounding", type=int, default=int(os.environ.get("ITV_ROUNDING", "5")),
+                        help="round published counts to the nearest multiple (differencing protection)")
     parser.add_argument("--max-drop", type=float, default=0.10,
                         help="refuse if valid responses fall by more than this fraction")
     parser.add_argument("--allow-drop", action="store_true")
@@ -95,8 +97,9 @@ def _run(args, schema, out_dir: Path) -> int:
         report.invalid_industry, report.invalid_answer, report.invalid_date, report.duplicate_ids,
         report.conflicting_duplicates,
     )
-    aggregates = aggregate(responses, schema, Policy(min_cohort=args.min_cohort))
-    release = publish(aggregates, out_dir, survey_version=schema.survey_version, min_cohort=args.min_cohort)
+    aggregates = aggregate(responses, schema, Policy(min_cohort=args.min_cohort, rounding=args.rounding))
+    release = publish(aggregates, out_dir, survey_version=schema.survey_version,
+                      min_cohort=args.min_cohort, rounding=args.rounding)
     log.info("published release %s", release.name)
     return 0
 

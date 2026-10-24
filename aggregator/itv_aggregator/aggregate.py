@@ -11,6 +11,10 @@ Suppression model (see docs/phase-0-report.md, "Public statistics"):
   "suppressed".
 * Demographic questions are only ever published one at a time against the
   concern list, never crossed with state or with each other.
+* Rounding (differencing protection): published counts and denominators are
+  rounded to the nearest ``rounding`` (5) and percentages are whole numbers
+  computed from the rounded values, so one new response rarely changes a
+  published figure between releases. Suppression decisions use exact counts.
 
 A minimum cell size reduces, but does not eliminate, re-identification risk.
 """
@@ -33,6 +37,12 @@ NONE = "none"
 @dataclass(frozen=True)
 class Policy:
     min_cohort: int = 20
+    rounding: int = 5
+
+
+def round_to(value: int, base: int) -> int:
+    """Nearest multiple of ``base``, halves rounded up (22 -> 20, 23 -> 25)."""
+    return base * ((value + base // 2) // base) if base > 1 else value
 
 
 def protect_partition(
@@ -55,13 +65,15 @@ def protect_partition(
     return suppressed
 
 
-def _cell(count: int, denominator: int, hidden: bool) -> dict:
+def _cell(count: int, denominator: int, hidden: bool, base: int) -> dict:
     if count == 0:
-        return {"status": NONE, "count": 0, "percent": 0.0}
+        return {"status": NONE, "count": 0, "percent": 0}
     if hidden:
         return {"status": SUPPRESSED, "count": None, "percent": None}
-    pct = round(100.0 * count / denominator, 1) if denominator else None
-    return {"status": PUBLISHED, "count": count, "percent": pct}
+    shown, of = round_to(count, base), round_to(denominator, base)
+    # From the rounded figures: a percentage of exact counts would undo the rounding.
+    pct = round(100 * shown / of) if of else None
+    return {"status": PUBLISHED, "count": shown, "percent": pct}
 
 
 def _week_start(d: date) -> date:
@@ -76,7 +88,7 @@ def _multi_counts(responses: list[Response], q: Question, k: int) -> tuple[Count
 
 def _breakdown(
     responses: list[Response], q: Question, concerns: dict[str, str],
-    hidden_concerns: set[str], k: int,
+    hidden_concerns: set[str], k: int, base: int,
 ) -> dict:
     """One demographic question against the concern list, with row percentages."""
     groups = q.groups()
@@ -95,14 +107,14 @@ def _breakdown(
     return {
         "question": q.code,
         "text": q.text,
-        "denominator": len(responses),
+        "denominator": round_to(len(responses), base),
         "groups": [
             {
                 "code": g,
                 "label": label,
-                **_cell(full[g], len(responses), g in hidden_groups),
+                **_cell(full[g], len(responses), g in hidden_groups, base),
                 "concerns": [
-                    {"code": c, **_cell(cross.get((g, c), 0), full[g], (g, c) in hidden_cross)}
+                    {"code": c, **_cell(cross.get((g, c), 0), full[g], (g, c) in hidden_cross, base)}
                     for c in concerns
                 ],
             }
@@ -111,7 +123,7 @@ def _breakdown(
     }
 
 
-def _distribution(responses: list[Response], q: Question, k: int) -> dict:
+def _distribution(responses: list[Response], q: Question, k: int, base: int) -> dict:
     total = len(responses)
     if q.type == "multi":
         counts, hidden = _multi_counts(responses, q, k)
@@ -126,9 +138,9 @@ def _distribution(responses: list[Response], q: Question, k: int) -> dict:
     out = {
         "question": q.code,
         "text": q.text,
-        "denominator": total,
+        "denominator": round_to(total, base),
         "options": [
-            {"code": o, "label": label, **_cell(counts.get(o, 0), total, o in hidden)}
+            {"code": o, "label": label, **_cell(counts.get(o, 0), total, o in hidden, base)}
             for o, label in options.items()
         ],
     }
@@ -138,7 +150,7 @@ def _distribution(responses: list[Response], q: Question, k: int) -> dict:
 
 
 def aggregate(responses: list[Response], schema: Schema, policy: Policy) -> dict[str, dict]:
-    k = policy.min_cohort
+    k, base = policy.min_cohort, policy.rounding
     total = len(responses)
     concern_q = schema.questions[CONCERN]
     concern_counts, hidden_concerns = _multi_counts(responses, concern_q, k)
@@ -149,42 +161,43 @@ def aggregate(responses: list[Response], schema: Schema, policy: Policy) -> dict
     industry_counts = Counter(r.industry for r in responses)
 
     summary = {
-        "valid_responses": total,
+        "valid_responses": round_to(total, base),
         "states_represented": sum(1 for v in states_full.values() if v > 0),
         "states_total": len(schema.states),
         "industries_represented": sum(1 for i in schema.industries if industry_counts.get(i, 0) > 0),
         "concerns": [
-            {"code": c, "label": label, **_cell(concern_counts.get(c, 0), total, c in hidden_concerns)}
+            {"code": c, "label": label, **_cell(concern_counts.get(c, 0), total, c in hidden_concerns, base)}
             for c, label in schema.concerns.items()
         ],
         "notes": [
             "Respondents may choose more than one concern, so concern percentages can sum to more than 100%.",
             "Percentages use valid responses as the denominator.",
+            f"Counts are rounded to the nearest {base} and percentages to whole numbers, so totals may not add up exactly.",
         ],
     }
 
     states = {
-        "denominator": total,
+        "denominator": round_to(total, base),
         "states": [
-            {"code": s, "name": name, **_cell(states_full[s], total, s in hidden_states)}
+            {"code": s, "name": name, **_cell(states_full[s], total, s in hidden_states, base)}
             for s, name in schema.states.items()
         ],
     }
 
-    industries = _breakdown(responses, schema.questions[INDUSTRY], schema.concerns, hidden_concerns, k)
+    industries = _breakdown(responses, schema.questions[INDUSTRY], schema.concerns, hidden_concerns, k, base)
     breakdowns = {
         "notes": [
             "Each question is shown separately against the concern list; questions are never combined with each other or with state.",
             "Concern percentages are the share of that group's respondents.",
         ],
         "breakdowns": [
-            _breakdown(responses, q, schema.concerns, hidden_concerns, k)
+            _breakdown(responses, q, schema.concerns, hidden_concerns, k, base)
             for q in schema.by_role("breakdown") if q.code != INDUSTRY
         ],
     }
     distributions = {
         "questions": [
-            _distribution(responses, q, k)
+            _distribution(responses, q, k, base)
             for q in schema.questions.values()
             if q.role == "distribution" or (q.role == "measure" and q.code != CONCERN)
         ],
@@ -193,7 +206,11 @@ def aggregate(responses: list[Response], schema: Schema, policy: Policy) -> dict
     weekly = Counter(_week_start(r.submit_date) for r in responses if r.submit_date)
     trends = {
         "granularity": "week",
-        "weeks": [{"week_start": w.isoformat(), "count": n} for w, n in sorted(weekly.items())],
+        # Same rules as every other cell: small weeks hidden, the rest rounded.
+        "weeks": [
+            {"week_start": w.isoformat(), "count": round_to(n, base) if n >= k else None}
+            for w, n in sorted(weekly.items())
+        ],
         # Anonymised LimeSurvey surveys do not record dates; never invent them.
         "date_not_recorded": sum(1 for r in responses if r.submit_date is None),
     }
