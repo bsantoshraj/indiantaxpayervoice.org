@@ -1,10 +1,13 @@
 # Indian Taxpayer Voice: Phase 1 status report
 
-**Status on 2026-10-24:** the staging platform is built, secured, documented and
-deployed automatically, and the survey has been tested end to end on a phone. The
-website pages are published without draft notices, and methodology, privacy and terms
-describe what the system actually does. **What remains is mostly owner work:** formal
-legal review, fuller research content, and two small account steps for analytics. See
+**Status on 2026-10-24 (end of day):** staging and **production** are built, secured,
+documented and deployed by CI/CD; production is live at https://indiantaxpayervoice.org
+and its **survey is open** (owner's controlled release, PR #33). The survey has been
+tested end to end on a phone. Pages are published without draft notices, and
+methodology, privacy and terms describe what the system actually does. An external
+security review was done and its fixes are live. **What remains is owner work:** formal
+legal review, fuller research content, and three small account steps (Search Console
+verify, an analytics token permission, DNSSEC). See
 [Remaining work](#7-remaining-work-to-close-phase-1).
 
 Phase 1 in the project brief (`claude.md`, kept private) §12 is "Secure public website and survey pilot".
@@ -44,15 +47,16 @@ pipeline rebuilt the staging survey; the evidence above was recorded before that
 ### Platform
 | Component | Version / detail |
 |---|---|
-| Droplet | `itv-staging-1`, DigitalOcean `blr1`, Premium AMD 1 vCPU / 2 GB / 50 GB, US$14 a month |
+| Droplets | Staging `itv-staging-1` and production `itv-prod-1`, DigitalOcean `blr1`, Premium AMD 1 vCPU / 2 GB / 50 GB, US$14 a month each, from one Terraform module |
 | Website | WordPress 7.1.3 (PHP 8.3.36), block theme `itv`, statistics and SEO must-use plugins |
 | Survey | LimeSurvey 7.5.1 (PHP 8.4.27) behind an nginx 1.30 proxy and the gate (ALTCHA proof-of-work) |
 | Databases | Host MariaDB 10.11: two databases, one user each, reachable only from the Docker networks |
-| Statistics | Aggregator every 5 minutes; static JSON/CSV with small-cell suppression (k = 20) |
+| Statistics | Aggregator hourly; static JSON/CSV, counts rounded to 5, small-cell suppression (k = 20), weekly trends |
 | HTTPS | Caddy 2.11 with a Cloudflare Origin CA certificate |
 | Edge | Cloudflare Free: DNS, CDN, WAF, rate limiting, Full (strict) TLS, Zero Trust Access (free tier) |
 
 ### Security controls
+- **External review (2026-10-24):** non-intrusive checks of production; findings fixed and live: WordPress account names hidden (users API, author archives, oEmbed), version hidden (generator tag, `readme.html`, `license.txt`), `X-Frame-Options`, `Permissions-Policy` and a framing/base/object/form CSP on the website, SPF `-all`, DMARC (`p=none` with reports), CAA, Bot Fight Mode pinned off. Smoke tests check the fixes on every deploy.
 - **Network:** HTTPS accepted only from Cloudflare's published ranges; port 80 closed; SSH key-only. MariaDB is not exposed.
 - **Edge:** Cloudflare Managed Free Ruleset; custom rules block `/xmlrpc.php`, LimeSurvey admin routes on the public survey host, and methods a host does not need (statistics are read-only); survey POSTs over 50 per IP per 10 s are blocked.
 - **Admins:** the LimeSurvey admin and the WordPress admin (`/wp-admin`, `/wp-login.php`) are behind Cloudflare Access with email one-time codes for `hello@indiantaxpayervoice.org` (8-hour sessions). The origin re-verifies the signed token for both (signature, application, issuer, expiry, email), with 13 tests covering forged, expired, wrong-app and wrong-algorithm tokens.
@@ -84,9 +88,10 @@ admin machine, which keeps 30 days.
 
 | Suite | Result |
 |---|---|
-| Aggregator unit and integration tests | 57 passed |
-| Gate tests (bot check and Access token verification) | 34 passed |
-| Staging smoke tests through Cloudflare (`scripts/smoke-staging.sh`) | 21/21 passed |
+| Aggregator unit and integration tests | 67 passed |
+| Gate tests (bot check, Access token verification, controlled release) | 38 passed |
+| Smoke tests through Cloudflare (`scripts/smoke.sh`) | staging 28/28, production 29/29 passed |
+| Backup restore test | PASS on staging and on production |
 | Backup restore test on staging | PASS |
 | Admin blocking on the public survey host | 10 URL variants refused locally (case, `?r=`, encoding, double slash); WAF 403 on staging |
 | Direct-to-origin admin requests with no, junk or unsigned tokens | 403 |
@@ -110,6 +115,8 @@ admin machine, which keeps 30 days.
 - **Email addresses showed as "[email protected]"** without JavaScript. Cloudflare email obfuscation turned off.
 - **Assessments was switched on by hand in the LimeSurvey admin.** Reverted when the pipeline rebuilt the survey from the JSON; lasting survey changes go in the JSON.
 - **The privacy outline promised "optional email for updates".** No such feature exists; the published notice describes only what is built.
+- **Production smoke tests blocked by Bot Fight Mode.** It had been switched on in the Cloudflare dashboard; on the Free plan it cannot exempt anything, so GitHub's runners got 403s. Turned off and pinned in Terraform.
+- **A production run waiting for approval queued staging deploys** (shared concurrency group). Production runs now have their own group.
 
 ## 6. Decisions still needed from the owner
 
@@ -123,24 +130,28 @@ admin machine, which keeps 30 days.
 | 6 | Email for administration notifications | Mailbox exists (Google Workspace). LimeSurvey has no outgoing mail, and its default "your answers were emailed" text is unresolved |
 | 7 | Quality-flag rules (speeders, bursts) | **Open**, after the pilot |
 | 8 | Methodologist review of questions and income bands | **Open** (bands extended at the owner's request) |
-| 9 | Survey timestamps | **Open.** Recommendation stands: keep anonymisation; trends from run-to-run totals (not built yet) |
+| 9 | Survey timestamps | **Decided:** anonymisation kept; weekly trends from run-to-run totals are built (Phase 2) |
 | 10 | Survey-response retention period | **Decided:** 2 years from the close of each survey round (published in the privacy notice) |
-| 11 | Production canonical hostname | Apex `indiantaxpayervoice.org`, with `www` redirecting (recommended, adopted for SEO defaults) |
+| 11 | Production canonical hostname | **Done:** apex `indiantaxpayervoice.org`, `www` redirects |
+| 12 | Production database | **Decided:** MariaDB on the droplet, same as staging (managed database deferred) |
+| 13 | Opening the production survey | **Done:** opened 2026-10-24 by controlled release, before the legal, privacy and methodologist reviews (owner decision) |
 
 ## 7. Remaining work to close Phase 1
 
 **Owner / editorial / legal**
 - [ ] Formal legal review of the privacy notice and terms, and decision 2 (who is responsible)
 - [ ] Fuller content for the research and topic pages (job loss, health, public spending, research, mission, FAQ)
-- [ ] Search Console: create the property and send the DNS verification code (it goes into Cloudflare via Terraform)
+- [ ] Search Console: the verification TXT record is on the domain; click **Verify** for the Domain property and submit the sitemap
 - [ ] Cloudflare token: add *Account › Account Web Analytics › Edit* so cookieless page-view analytics can be switched on
+- [ ] DNSSEC: enable in Cloudflare and add the DS record at the registrar; DMARC to `quarantine` after about two weeks of clean reports
 
 **Engineering**
 - [ ] Enable Cloudflare Web Analytics (beacon on the website only) once the token permission is added
 - [x] Re-run the responsive check (14 pages × 7 widths) after the content changes: 98/98 PASS (local)
 - [ ] Decide Turnstile on or off; if on, create keys in Terraform
 - [ ] Resolve LimeSurvey's outgoing-mail behaviour (decision 6)
-- [ ] Review the Dependabot PRs: #7 (DigitalOcean provider), #8 (nginx 1.31), #10 (altcha 2.3), #9 (MariaDB 11.8 → 13.0, a major version needing a local migration test)
+- [ ] Review the Dependabot PRs (still open): #7 (DigitalOcean provider), #8 (nginx 1.31), #10 (altcha 2.3), #9 (MariaDB 11.8 → 13.0, a major version needing a local migration test); dependency alerts for `extract-zip` are in the test-only `tests/responsive` tools
+- [x] Production environment, CI/CD promotion with approval, controlled survey release, external security review and fixes
 
 **Out of Phase 1 scope:** monitoring and alerting, including the billing alert (#5);
 remote Terraform state (#12); on-demand end-to-end survey test (#13).

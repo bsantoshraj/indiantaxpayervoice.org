@@ -49,3 +49,19 @@ variable "survey_posts_per_10s" {
   type        = number
   default     = 50
 }
+
+variable "dmarc_policy" {
+  description = "DMARC policy: none (monitor), then quarantine once reports are clean, then reject"
+  type        = string
+  default     = "none"
+  validation {
+    condition     = contains(["none", "quarantine", "reject"], var.dmarc_policy)
+    error_message = "dmarc_policy must be none, quarantine or reject."
+  }
+}
+
+variable "dmarc_reports" {
+  description = "Mailbox for DMARC aggregate reports and CAA violation reports"
+  type        = string
+  default     = "hello@indiantaxpayervoice.org"
+}
