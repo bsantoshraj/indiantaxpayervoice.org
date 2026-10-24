@@ -71,6 +71,16 @@ created by hand in Cloudflare; `survey-admin-staging` is in Terraform.
 allowlist into the droplet's `.env`, which the origin check uses). They also need a
 LimeSurvey account.
 
+## Email and certificate DNS
+
+`infra/terraform/cloudflare/email_dns.tf`: SPF allows only Google Workspace (`-all`);
+DMARC starts at `p=none` with aggregate reports to `hello@indiantaxpayervoice.org`;
+CAA limits certificate issuance to the CAs Cloudflare uses (violation reports to the
+same mailbox). **After about two weeks of clean DMARC reports** (only Google sending,
+all passing), set `dmarc_policy = "quarantine"` in `variables.tf` and apply; later
+`reject`. If anything else ever needs to send mail as the domain (for example
+LimeSurvey or a newsletter), add it to SPF first.
+
 ## SEO and analytics
 
 - `wordpress/mu-plugins/itv-seo.php` adds meta descriptions (each page's excerpt, set

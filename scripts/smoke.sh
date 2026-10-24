@@ -51,6 +51,12 @@ check "admin host requires Cloudflare Access" "302 *.cloudflareaccess.com" \
 check "WordPress admin requires Cloudflare Access" "302 *.cloudflareaccess.com" \
   "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$wp/wp-login.php" | sed -E 's#https://([^/]+)/.*#\1#')"
 check "WAF blocks /xmlrpc.php" 403 "$(code -X POST "$wp/xmlrpc.php")"
+# Security hardening (account names, version, framing)
+check "users API hidden from visitors" 404 "$(code "$wp/wp-json/wp/v2/users")"
+check "?author=1 does not reveal a username" "301 $wp/" "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$wp/?author=1")"
+check "readme.html hidden" 404 "$(code "$wp/readme.html")"
+check "no WordPress generator tag" 0 "$(curl -s --max-time 20 "$wp/" | grep -c 'name="generator"')"
+check "website refuses framing (X-Frame-Options)" SAMEORIGIN "$(curl -s -o /dev/null -D - --max-time 20 "$wp/" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-frame-options"{print $2}')"
 check "WAF blocks writes to statistics" 403 "$(code -X POST "$stats/v1/statistics/summary")"
 check "stats summary" 200 "$(code "$stats/v1/statistics/summary")"
 
