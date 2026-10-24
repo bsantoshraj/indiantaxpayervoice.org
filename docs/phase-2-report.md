@@ -2,7 +2,7 @@
 
 **Status on 2026-10-24:** the aggregation pipeline, the public statistics API, the
 differencing protection, the tile-grid state/UT map and five concern heat maps are
-built and live on staging, weekly trends and heat-map filters are built and live on staging and production, and the staging dry run passed. **Phase 2 is not complete:** a manual screen-reader check, and the privacy review
+built and live on staging and production, together with weekly trends and heat-map filters, and the staging dry run passed. **Phase 2 is not complete:** a manual screen-reader check, and the privacy review
 before launch remain. See [Remaining work](#6-remaining-work-to-close-phase-2).
 
 Phase 2 in the project brief (§12) is "Aggregation and public statistics"; the
@@ -17,9 +17,9 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 |---|---|---|
 | Controlled LimeSurvey integration | ✅ | RemoteControl API, called over the internal network by a `stats-exporter` account that can only export this one survey. No public route to raw data |
 | Precomputed aggregate statistics | ✅ | Hourly aggregator: validation, dedupe, small-group suppression (k = 20) with complementary suppression, rounding, atomic publish; a suspicious drop keeps the previous release |
-| Public statistics API / static publishing | ✅ | `stats-staging…/v1/statistics/{summary, states, industries, breakdowns, distributions, trends}` and `states.csv`; read-only (WAF allows only GET/HEAD), cached by Cloudflare per the origin's headers |
+| Public statistics API / static publishing | ✅ | `stats.indiantaxpayervoice.org` (production) and `stats-staging…` `/v1/statistics/{summary, states, industries, breakdowns, distributions, trends}` and `states.csv`; read-only (WAF allows only GET/HEAD), cached by Cloudflare per the origin's headers |
 | Public counters and heat maps | ✅ | Counters, tile-grid map, heat maps by sector, income, gender, age and employment, and weekly trends |
-| Suppression and privacy tests | ✅ | 61 aggregator tests, including synthetic-data tests for rounding and differencing |
+| Suppression and privacy tests | ✅ | 67 aggregator tests (rounding, differencing, trends), plus the staging dry run on synthetic data |
 | Metric definitions and refresh intervals | ✅ | Methodology page: counting rules, suppression, rounding, hourly refresh, limitations, corrections |
 
 ## 2. Map and heat-map requirements (brief §8)
@@ -58,7 +58,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 
 | Check | Result |
 |---|---|
-| Aggregator tests | 61 passed (rounding, differencing, suppression on exact counts, trends) |
+| Aggregator tests | 67 passed (rounding, differencing, suppression on exact counts, trends) |
 | Synthetic releases (local) | Map: 12 states shown in five shades, 4 hidden, 20 with no responses; values rounded (22 → 20, 24 → 25). Heat maps: top income bands and "another gender identity" cells hidden; complementary suppression visible |
 | Responsive check, 14 pages × 7 widths | 98/98 PASS after the map and heat maps |
 | Phone layout | No horizontal scroll at 375 px (a 444 px overflow from screen-reader text in scrollable tables was found and fixed) |
