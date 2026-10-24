@@ -116,4 +116,5 @@ deploy key. Run it after changing either.
 
 Tracked as GitHub issues with the `backlog` label: monitoring and alerts (#5, deferred
 until production work starts, though a billing alert is required before Phase 1 is
-complete), remote Terraform state, and a manually triggered end-to-end survey test.
+complete), remote Terraform state (#12), and a manually triggered end-to-end survey
+test (#13).
