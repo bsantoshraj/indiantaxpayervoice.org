@@ -267,7 +267,7 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - [ ] Filters and explanatory tooltips (progressive enhancement)
 - [ ] Trends from the change in totals between releases (responses carry no dates)
 - [ ] Publish to Spaces/CDN (only if production load needs it; Cloudflare already caches the static files)
-- **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression and rounding verified on synthetic data in staging; the map and charts pass keyboard and screen-reader checks.
+- **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression and rounding verified on synthetic data in staging; the map and charts pass keyboard and screen-reader checks. Status: [Phase 2 report](phase-2-report.md).
 
 ### Phase 3 — Elasticity and resilience
 - [ ] Load tests (k6/Locust) for the Growth and Major-campaign profiles; measure LimeSurvey req/s per vCPU
