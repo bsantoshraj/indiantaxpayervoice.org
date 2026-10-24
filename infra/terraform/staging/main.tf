@@ -35,6 +35,10 @@ resource "digitalocean_droplet" "staging" {
   }
 }
 
+# HTTPS accepts only Cloudflare's edge, so the origin cannot be reached (or the
+# gate and rate limits bypassed) by IP. Port 80 is closed: Cloudflare's "Always
+# Use HTTPS" redirects at the edge. (The Let's Encrypt fallback Caddyfile needs
+# 80/443 open to the internet and does not work behind this firewall.)
 resource "digitalocean_firewall" "staging" {
   name        = "itv-staging"
   droplet_ids = [digitalocean_droplet.staging.id]
@@ -46,13 +50,8 @@ resource "digitalocean_firewall" "staging" {
   }
   inbound_rule {
     protocol         = "tcp"
-    port_range       = "80"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
-  inbound_rule {
-    protocol         = "tcp"
     port_range       = "443"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+    source_addresses = var.cloudflare_cidrs
   }
   # MariaDB (3306) is deliberately not opened: only containers on the host reach it.
 
