@@ -2,7 +2,7 @@
 
 **Status on 2026-10-24:** the aggregation pipeline, the public statistics API, the
 differencing protection, the tile-grid state/UT map and five concern heat maps are
-built and live on staging, weekly trends and heat-map filters are built. **Phase 2 is not complete:** a manual screen-reader check, and the privacy review
+built and live on staging, weekly trends and heat-map filters are built and live on staging and production, and the staging dry run passed. **Phase 2 is not complete:** a manual screen-reader check, and the privacy review
 before launch remain. See [Remaining work](#6-remaining-work-to-close-phase-2).
 
 Phase 2 in the project brief (§12) is "Aggregation and public statistics"; the
@@ -44,7 +44,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done.
 | Criterion | Status | Evidence |
 |---|---|---|
 | No public file contains IDs, timestamps finer than a week, or free text | ✅ | Tested in the aggregator suite; the only time in a release is the refresh time (minute precision) |
-| Suppression verified on synthetic data in staging | ◐ | Verified on synthetic releases **locally** (1,112 and 1,200 responses): small groups hidden, complementary suppression, rounding. Not run on staging, to avoid publishing fabricated figures on a public URL; a staging dry run that does not publish is proposed instead |
+| Suppression verified on synthetic data in staging | ✅ | **Staging dry run, 2026-10-24**: staging's deployed aggregator image (`b96a776`) on 1,035 synthetic responses, written to a temporary folder, never published. 337 published counts all multiples of 5, none between 1 and 19, all percentages whole; marker response IDs and a marker comment absent from every file; only timestamp the refresh time (minute precision); small states (12, 5, 1) hidden, and Kerala (21) hidden by complementary suppression because those three sum to 18; rare income band hidden; CSV formula-safe. Live staging statistics unchanged; output deleted |
 | Map and charts pass keyboard and screen-reader checks | ◐ | Keyboard focus and tooltip verified in a real browser; screen-reader text present for every tile and cell. **Manual screen-reader test (NVDA or TalkBack) not done** |
 
 ## 4. What was built
@@ -74,5 +74,5 @@ insufficient data is a requirement; hourly releases blur when it happened.
 - [x] **Heat-map filters**: question selector and sort by concern, as progressive enhancement; only hides, shows and reorders tables already published, so no new combination of answers is computed
 - [ ] **Manual screen-reader test** of the map and heat maps (NVDA on Windows or TalkBack on Android)
 - [ ] **Privacy review before launch** (brief §8): minimum group size, rounding, the zero-versus-hidden signal, and the free-text comments, ideally by someone independent
-- [ ] **Staging verification without publishing**: run the aggregator on synthetic data into a temporary directory on staging and check the output, so no fabricated figures appear publicly
+- [x] **Staging verification without publishing**: done 2026-10-24 (see §3); all checks passed
 - [ ] Optional: publish statistics to Spaces/CDN if production traffic needs it (Cloudflare already caches the static files)
