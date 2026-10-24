@@ -25,3 +25,6 @@ survey-failure.png
 *.tfstate.*
 terraform.tfvars
 .terraform.lock.hcl.bak
+
+# Project brief: kept private by the owner (not published with the repository)
+claude.md

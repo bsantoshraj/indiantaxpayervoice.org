@@ -7,7 +7,7 @@ describe what the system actually does. **What remains is mostly owner work:** f
 legal review, fuller research content, and two small account steps for analytics. See
 [Remaining work](#7-remaining-work-to-close-phase-1).
 
-Phase 1 in [`claude.md`](../claude.md) §12 is "Secure public website and survey pilot".
+Phase 1 in the project brief (`claude.md`, kept private) §12 is "Secure public website and survey pilot".
 The architecture and plan are in the [Phase 0 report](phase-0-report.md). How the
 system works is described in [how-it-works.md](how-it-works.md).
 

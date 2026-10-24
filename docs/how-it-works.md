@@ -3,7 +3,7 @@
 Indian Taxpayer Voice collects anonymous, voluntary survey responses from taxpayers
 and publishes **aggregated, privacy-protected statistics** on a public website. This
 page explains the moving parts and how a request flows through them. For the
-original requirements see [`claude.md`](../claude.md); for the design rationale,
+original requirements see the private project brief (`claude.md`); for the design rationale,
 costs and threat model see the [Phase 0 report](phase-0-report.md).
 
 ## The pieces
