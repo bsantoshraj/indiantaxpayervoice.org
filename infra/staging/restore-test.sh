@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Run on the staging droplet (sudo). Restores the newest backup of each
-# database into a scratch database, proves it is a faithful copy (re-dumped and
+# Run on the staging droplet (sudo). Restores the newest complete backup set
+# (both databases and .env from one run) into scratch databases, proves each
+# is a faithful copy (re-dumped and
 # compared with the backup), runs basic application checks, then drops the
 # scratch databases. Decrypted data and the key stay in memory (/dev/shm).
 # Usage: restore-test.sh <age-identity-file>   (/dev/stdin to stream it over SSH)
@@ -27,10 +28,18 @@ normalise() { grep -v '^-- '; }
 decrypt() { age -d -i "$work/identity" "$1"; }
 q() { mariadb -N -B "$1" -e "$2"; }
 
+# Newest run that produced all three files; never mix files from different runs.
+set_ts=""
+for env_file in $(ls -1r "$dest"/env-*.age 2>/dev/null); do
+  ts=$(basename "$env_file" .age); ts=${ts#env-}
+  if [[ -f "$dest/$WP_DB_NAME-$ts.sql.gz.age" && -f "$dest/$LS_DB_NAME-$ts.sql.gz.age" ]]; then set_ts=$ts; break; fi
+done
+[[ -n "$set_ts" ]] || { echo "FAIL: no complete backup set in $dest"; exit 1; }
+echo "Backup set $set_ts"
+
 start=$(date +%s)
 for db in "$WP_DB_NAME" "$LS_DB_NAME"; do
-  backup=$(ls -1t "$dest/$db"-*.sql.gz.age 2>/dev/null | head -1)
-  [[ -n "$backup" ]] || { echo "FAIL: no backup of $db in $dest"; exit 1; }
+  backup="$dest/$db-$set_ts.sql.gz.age"
   target="restoretest_$db"
   scratch+=("$target")
   mariadb -e "DROP DATABASE IF EXISTS \`$target\`; CREATE DATABASE \`$target\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
@@ -58,12 +67,14 @@ active=$(q "$ls" "SELECT active FROM lime_surveys WHERE sid=$sid")
 [[ "$active" == "Y" ]] || { echo "FAIL: survey $sid not active in restored LimeSurvey DB (active='$active')"; exit 1; }
 echo "OK  LimeSurvey: survey $sid active, questions=$(q "$ls" "SELECT COUNT(*) FROM lime_questions WHERE sid=$sid"), responses=$(q "$ls" "SELECT COUNT(*) FROM lime_responses_$sid")"
 
-# The secrets backup must hold the keys LimeSurvey is using now.
-env_backup=$(ls -1t "$dest"/env-*.age 2>/dev/null | head -1)
-[[ -n "$env_backup" ]] || { echo "FAIL: no secrets backup in $dest"; exit 1; }
+# The set's secrets backup must hold all LimeSurvey keys: they are what decrypts
+# this set's data. Keys rotated since the backup are reported, not a failure.
+env_backup="$dest/env-$set_ts.age"
+saved_keys=$(decrypt "$env_backup" | grep -cE '^LS_ENCRYPT_[A-Z_]+=[0-9a-f]+$' || true)
+(( saved_keys == 5 )) || { echo "FAIL: $(basename "$env_backup") holds $saved_keys of 5 LimeSurvey encryption keys"; exit 1; }
 if cmp -s <(decrypt "$env_backup" | grep '^LS_ENCRYPT_' | sort) <(grep '^LS_ENCRYPT_' .env | sort); then
-  echo "OK  secrets: $(basename "$env_backup") holds the current LimeSurvey encryption keys"
+  echo "OK  secrets: $(basename "$env_backup") holds all 5 LimeSurvey keys (the running keys)"
 else
-  echo "FAIL: $(basename "$env_backup") does not match the current LimeSurvey encryption keys"; exit 1
+  echo "OK  secrets: $(basename "$env_backup") holds all 5 LimeSurvey keys (rotated since; restore this set with its own keys)"
 fi
 echo "PASS restore test in $(( $(date +%s) - start ))s; scratch databases dropped"

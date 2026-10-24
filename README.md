@@ -85,6 +85,24 @@ stay in `/dev/shm`), re-dumps them and requires a byte-identical match, checks
 WordPress and the active survey, confirms the secrets backup holds the current
 LimeSurvey keys, and drops the scratch databases.
 
+Restore tests use the newest *complete* set (both databases and `.env` from the
+same run) and check that its `.env` holds all five LimeSurvey keys, since those
+keys, not the running ones, decrypt that set.
+
+### Rotating staging secrets
+
+```bash
+ssh deploy@<ip> '/opt/itv/infra/staging/rotate-secrets.sh'                     # passwords + gate secret
+ssh deploy@<ip> '/opt/itv/infra/staging/rotate-secrets.sh --encryption-keys'   # also LimeSurvey keys
+```
+
+Replaces every generated secret in `/opt/itv/.env`, applies it to the host DB
+users, the LimeSurvey and WordPress accounts and the containers, logs all admins
+out, and takes a fresh backup. Values are never printed. `--encryption-keys` is
+refused while any data is encrypted with the current keys. Backups taken before a
+rotation still hold the old secrets: delete them if the rotation was because of
+exposure.
+
 `scripts/pull-staging-backups.sh <ip>` copies the encrypted files to
 `~/itv-backups/staging` on the admin machine (still encrypted). Planned: a
 separate Spaces bucket as the off-site copy.

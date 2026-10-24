@@ -53,7 +53,8 @@ for entry in "${pages[@]}"; do
       --post_name="$slug" --post_title="$title" --porcelain)
     echo "created $slug ($id)"
   else
-    wp post update "$id" "$content" --post_title="$title" >/dev/null
+    # Publish too: WordPress installs a draft privacy-policy page of its own.
+    wp post update "$id" "$content" --post_title="$title" --post_status=publish >/dev/null
     echo "updated $slug ($id)"
   fi
   rm -f "$content"
