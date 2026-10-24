@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars only to override defaults. The API token is read from
+# CLOUDFLARE_API_TOKEN, e.g. export CLOUDFLARE_API_TOKEN="$(cat ~/.config/itv/cf_token)"
+# wordpress_hosts = ["staging.indiantaxpayervoice.org", "indiantaxpayervoice.org", "www.indiantaxpayervoice.org"]

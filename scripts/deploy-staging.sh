@@ -41,3 +41,8 @@ docker compose up -d   # pick up ITV_LS_SURVEY_ID
 docker compose run --rm wpcli bash /bootstrap.sh | tail -1
 docker compose ps --format '{{.Service}}: {{.Status}}'
 REMOTE
+
+# New content must not wait for the edge cache (10 min for pages, 5 for stats).
+hosts=$(ssh "${ssh_opts[@]}" "$target" "grep -E '^(WP_HOST|STATS_HOST)=' /opt/itv/.env | cut -d= -f2 | tr '\n' ' '")
+# shellcheck disable=SC2086
+./scripts/purge-cdn.sh $hosts || echo "Warning: Cloudflare cache not purged; pages may be up to 10 minutes stale." >&2
