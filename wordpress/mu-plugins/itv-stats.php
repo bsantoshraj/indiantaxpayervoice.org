@@ -218,3 +218,97 @@ add_shortcode(
 		return $out . itv_stats_meta_note( $doc['meta'] );
 	}
 );
+
+/**
+ * Heat map: one demographic question (or sector) against the concern list, as a
+ * real table whose cells are shaded by percentage, so it is also its own text
+ * alternative. Each question is shown on its own: never crossed with state or
+ * with another question (the aggregator does not publish such combinations).
+ * Usage: [itv_heatmap question="INCOME"] (INDUSTRY, EMPTYPE, INCOME, GENDER, AGEBAND).
+ */
+const ITV_CONCERN_SHORT = array(
+	'JOBLOSS' => 'Job loss',
+	'HEALTH'  => 'Health costs',
+	'PUBSVC'  => 'Public services',
+	'TAXCOMP' => 'Tax compliance',
+	'RETIRE'  => 'Retirement',
+	'COSTLIV' => 'Cost of living',
+	'OTHER'   => 'Something else',
+);
+
+function itv_heat_level( $percent ) {
+	foreach ( array( 60 => 5, 40 => 4, 25 => 3, 10 => 2 ) as $min => $level ) {
+		if ( $percent >= $min ) {
+			return $level;
+		}
+	}
+	return 1;
+}
+
+add_shortcode(
+	'itv_heatmap',
+	function ( $atts ) {
+		$question = strtoupper( sanitize_key( shortcode_atts( array( 'question' => 'INDUSTRY' ), $atts )['question'] ) );
+		if ( ! in_array( $question, array( 'INDUSTRY', 'EMPTYPE', 'INCOME', 'GENDER', 'AGEBAND' ), true ) ) {
+			return '';
+		}
+		$doc     = itv_stats_fetch( 'INDUSTRY' === $question ? 'industries' : 'breakdowns' );
+		$summary = itv_stats_fetch( 'summary' );
+		if ( ! $doc || ! $summary ) {
+			return itv_stats_unavailable();
+		}
+		$data = $doc['data'];
+		if ( 'INDUSTRY' !== $question ) {
+			$data = current( array_filter( $data['breakdowns'], fn( $b ) => ( $b['question'] ?? '' ) === $question ) );
+			if ( ! $data ) {
+				return itv_stats_unavailable();
+			}
+		}
+		$concerns = array_column( $summary['data']['concerns'], 'label', 'code' );
+		$dash     = '–';
+
+		$caption = sprintf(
+			/* translators: %s: the question, e.g. "Which range best describes your annual individual income before tax?" */
+			__( '%s Share of each group choosing each concern. People could choose several concerns, so a row can add up to more than 100%%.', 'itv' ),
+			$data['text']
+		);
+		$out  = '<div class="itv-table-wrap" role="region" tabindex="0" aria-label="' . esc_attr( $data['text'] ) . '">';
+		$out .= '<table class="itv-table itv-heatmap"><caption>' . esc_html( $caption ) . '</caption><thead><tr>';
+		$out .= '<th scope="col">' . esc_html__( 'Group', 'itv' ) . '</th><th scope="col">' . esc_html__( 'Responses', 'itv' ) . '</th>';
+		foreach ( $concerns as $code => $label ) {
+			$short = ITV_CONCERN_SHORT[ $code ] ?? $label;
+			$out  .= '<th scope="col"><span aria-hidden="true">' . esc_html( $short ) . '</span><span class="itv-sr-only">' . esc_html( $label ) . '</span></th>';
+		}
+		$out .= '</tr></thead><tbody>';
+		foreach ( $data['groups'] as $group ) {
+			$gstatus = $group['status'] ?? 'suppressed';
+			if ( 'published' === $gstatus ) {
+				$n = number_format_i18n( (int) $group['count'] );
+			} elseif ( 'none' === $gstatus ) {
+				$n = __( 'No responses', 'itv' );
+			} else {
+				$n = __( 'Not shown', 'itv' );
+			}
+			$out .= '<tr><th scope="row">' . esc_html( $group['label'] ) . '</th><td>' . esc_html( $n ) . '</td>';
+			$cells = array_column( $group['concerns'], null, 'code' );
+			foreach ( array_keys( $concerns ) as $code ) {
+				$cell   = $cells[ $code ] ?? array( 'status' => 'suppressed' );
+				$status = $cell['status'] ?? 'suppressed';
+				if ( 'published' === $status ) {
+					$pct  = (int) $cell['percent'];
+					$out .= '<td class="itv-heat itv-tile--level' . itv_heat_level( $pct ) . '">' . esc_html( number_format_i18n( $pct ) ) . '%</td>';
+				} elseif ( 'none' === $status ) {
+					$out .= '<td class="itv-heat itv-heat--none">' . ( 'published' === $gstatus ? '0%' : esc_html( $dash ) ) . '</td>';
+				} else {
+					$out .= '<td class="itv-heat itv-tile--suppressed"><span aria-hidden="true">' . esc_html( $dash ) . '</span><span class="itv-sr-only">' . esc_html__( 'not shown', 'itv' ) . '</span></td>';
+				}
+			}
+			$out .= '</tr>';
+		}
+		$out .= '</tbody></table></div>';
+		$out .= '<ul class="itv-tilemap-legend" aria-label="' . esc_attr__( 'Key', 'itv' ) . '">'
+			. '<li><span class="itv-swatch itv-tile--level1"></span><span class="itv-swatch itv-tile--level3"></span><span class="itv-swatch itv-tile--level5"></span> ' . esc_html__( 'Lower to higher share (under 10%, 10–24%, 25–39%, 40–59%, 60% or more)', 'itv' ) . '</li>'
+			. '<li><span class="itv-swatch itv-tile--suppressed"></span> ' . esc_html__( 'Not shown (small group)', 'itv' ) . '</li></ul>';
+		return $out . itv_stats_meta_note( $doc['meta'] );
+	}
+);
