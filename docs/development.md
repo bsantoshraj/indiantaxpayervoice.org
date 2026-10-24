@@ -52,8 +52,13 @@ the `pages` list in `bootstrap.sh`. The theme is `wordpress/themes/itv`.
 **Change the survey.** The questionnaire is `survey/questionnaire-v1.json`; the
 aggregator validates exports against it, so question and option codes must match
 LimeSurvey's. `survey/build_structure.py` builds the LimeSurvey import from it.
-Changing codes or adding questions needs aggregator test updates and a new
-survey version; follow the methodology notes in `claude.md`.
+Changing codes or adding questions needs aggregator test updates; follow the
+methodology notes in `claude.md`. LimeSurvey cannot change an active survey's
+questions or answer options, so a changed questionnaire means **replacing** the
+survey, which deletes its responses. Locally: `./scripts/setup-local-survey.sh`
+(replaces it), then `docker compose up -d`, the bootstrap, and
+`docker compose run --rm aggregator --allow-drop`. On staging the pipeline does this
+automatically (see [ci-cd.md](ci-cd.md#survey-changes)).
 
 **Run the aggregator by hand.** `docker compose run --rm aggregator` (from LimeSurvey)
 or with a CSV export: `docker compose run --rm -v "$PWD/export.csv:/in/export.csv:ro" aggregator --csv /in/export.csv`.
