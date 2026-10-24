@@ -30,6 +30,8 @@ from pathlib import Path
 
 import altcha
 
+from .access import HEADER as ACCESS_HEADER, AccessConfig, AccessVerifier
+
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 WIDGET = "altcha-3.2.4.min.js"
 COOKIE = "itv_pass"
@@ -247,6 +249,7 @@ def render_gate(cfg: Config, next_url: str, error: str = "") -> bytes:
 class Handler(BaseHTTPRequestHandler):
     cfg: Config
     state: State
+    access: AccessVerifier
     server_version = "itv-gate"
     sys_version = ""
 
@@ -304,6 +307,8 @@ class Handler(BaseHTTPRequestHandler):
             body = (STATIC_DIR / WIDGET).read_bytes()
             return self._send(200, body, "text/javascript; charset=utf-8",
                               {"Cache-Control": "public, max-age=31536000, immutable"})
+        if url.path == "/access/check":  # nginx auth_request for the LimeSurvey admin hostname
+            return self._send(204 if self.access.allows(self.headers.get(ACCESS_HEADER)) else 403)
         if url.path == "/gate/health":
             return self._send(200, b"ok\n")
         return self._send(404, b"not found\n")
@@ -329,13 +334,16 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(303, b"", headers={"Location": nxt, "Set-Cookie": cookie})
 
 
-def make_server(cfg: Config, host: str = "0.0.0.0", port: int = 8000) -> ThreadingHTTPServer:
-    handler = type("BoundHandler", (Handler,), {"cfg": cfg, "state": State()})
+def make_server(cfg: Config, host: str = "0.0.0.0", port: int = 8000,
+                access: AccessVerifier | None = None) -> ThreadingHTTPServer:
+    access = access or AccessVerifier(AccessConfig())  # unconfigured: denies outside local
+    handler = type("BoundHandler", (Handler,), {"cfg": cfg, "state": State(), "access": access})
     return ThreadingHTTPServer((host, port), handler)
 
 
 def main() -> None:
-    server = make_server(Config.from_env(), port=int(os.environ.get("PORT", "8000")))
+    server = make_server(Config.from_env(), port=int(os.environ.get("PORT", "8000")),
+                         access=AccessVerifier(AccessConfig.from_env()))
     server.serve_forever()
 
 

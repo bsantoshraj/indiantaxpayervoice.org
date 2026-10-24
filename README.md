@@ -127,3 +127,20 @@ cd infra/terraform/cloudflare && terraform init && terraform plan
 - `scripts/purge-cdn.sh <host>...` purges only the named hostnames; the staging
   deploy runs it at the end. Content edited in wp-admin can take up to 10 minutes
   to appear for visitors unless purged.
+
+## LimeSurvey admin (Cloudflare Access)
+
+The admin is served only on its own hostname, `survey-admin-staging.indiantaxpayervoice.org`
+(local: http://localhost:8083). Defined in `infra/terraform/cloudflare/access.tf`.
+
+- **Cloudflare Access** in front: a one-time code is emailed to an allowed address
+  (`survey_admin_emails`, default `hello@indiantaxpayervoice.org`); sessions last 8 h.
+- **The origin re-checks** every request: nginx (`:8090`) asks the gate's
+  `/access/check`, which verifies the `Cf-Access-Jwt-Assertion` token (Cloudflare's
+  signature, this app's `aud`, issuer, expiry, allowed email). Without valid
+  `ITV_ACCESS_*` settings it refuses everyone in staging and production.
+- **The public survey hostname refuses every admin route** (`/index.php/admin`, `/admin`,
+  `?r=admin`, REST API, installer) with 404.
+- The staging deploy writes `SURVEY_ADMIN_HOST` and `ITV_ACCESS_*` (not secret) into
+  `/opt/itv/.env` from the Cloudflare Terraform outputs. To add an administrator,
+  extend `survey_admin_emails` and re-run `terraform apply` and the deploy.

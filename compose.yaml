@@ -149,6 +149,10 @@ services:
       ITV_GATE_SECURE_COOKIE: ${ITV_GATE_SECURE_COOKIE:-1}
       TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
       TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+      # Cloudflare Access check for the LimeSurvey admin (required in staging/production).
+      ITV_ACCESS_TEAM_DOMAIN: ${ITV_ACCESS_TEAM_DOMAIN:-}
+      ITV_ACCESS_AUD: ${ITV_ACCESS_AUD:-}
+      ITV_ACCESS_ALLOWED_EMAILS: ${ITV_ACCESS_ALLOWED_EMAILS:-}
     networks: [survey_net]
 
   # Public entry point for the survey: gate check + rate limits.
@@ -159,6 +163,7 @@ services:
     ports:
       - "${BIND_ADDR:-127.0.0.1}:${LS_PORT}:8080"
       - "${BIND_ADDR:-127.0.0.1}:${LS_TLS_PORT:-8443}:8443"
+      - "${BIND_ADDR:-127.0.0.1}:${LS_ADMIN_PORT:-8083}:8090"   # LimeSurvey admin (Access-checked)
     volumes:
       - ./infra/nginx/survey.conf:/etc/nginx/conf.d/default.conf:ro
       - ./infra/nginx/survey-locations.inc:/etc/nginx/snippets/survey-locations.inc:ro

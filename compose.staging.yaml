@@ -13,6 +13,7 @@ services:
     environment:
       WP_HOST: ${WP_HOST}
       SURVEY_HOST: ${SURVEY_HOST}
+      SURVEY_ADMIN_HOST: ${SURVEY_ADMIN_HOST}
       STATS_HOST: ${STATS_HOST}
     volumes:
       # Caddyfile (Let's Encrypt, sslip.io) or Caddyfile.origin-ca (Cloudflare Origin CA)

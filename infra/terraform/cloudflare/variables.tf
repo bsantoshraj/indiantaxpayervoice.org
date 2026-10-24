@@ -19,11 +19,23 @@ variable "stats_hosts" {
 variable "survey_hosts" {
   description = "Hostnames serving the survey and its admin: never cached"
   type        = list(string)
-  default     = ["survey-staging.indiantaxpayervoice.org"]
+  default     = ["survey-staging.indiantaxpayervoice.org", "survey-admin-staging.indiantaxpayervoice.org"]
 }
 
 variable "wordpress_edge_ttl" {
   description = "Seconds an anonymous WordPress page stays at the edge (deploys purge it)"
   type        = number
   default     = 600
+}
+
+variable "staging_survey_admin_host" {
+  description = "LimeSurvey admin hostname for staging (Cloudflare Access protected)"
+  type        = string
+  default     = "survey-admin-staging.indiantaxpayervoice.org"
+}
+
+variable "survey_admin_emails" {
+  description = "Email addresses allowed into the LimeSurvey admin (one-time code login)"
+  type        = list(string)
+  default     = ["hello@indiantaxpayervoice.org"]
 }

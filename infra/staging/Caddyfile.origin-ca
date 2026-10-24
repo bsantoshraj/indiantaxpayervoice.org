@@ -40,6 +40,14 @@
 	}
 }
 
+# LimeSurvey admin: Cloudflare Access at the edge, token re-verified by the gate.
+{$SURVEY_ADMIN_HOST} {
+	import security
+	reverse_proxy survey-proxy:8090 {
+		header_up X-Real-IP {client_ip}
+	}
+}
+
 {$STATS_HOST} {
 	import security
 	reverse_proxy stats:8080 {
