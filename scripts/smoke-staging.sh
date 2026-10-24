@@ -22,7 +22,8 @@ check "http redirects to https" 301 "$(code "http://staging.$domain/")"
 check "gate health" 200 "$(code "$survey/gate/health")"
 check "survey sends visitors through the gate" 302 "$(code "$survey/index.php/1?lang=en")"
 for path in /index.php/admin /admin "/index.php?r=admin/authentication/sa/login" /index.php/rest/v1/survey; do
-  check "public survey host refuses $path" 404 "$(code "$survey$path")"
+  # 403: blocked by the Cloudflare WAF; 404: refused by the origin's nginx.
+  check "public survey host refuses $path" "@(403|404)" "$(code "$survey$path")"
 done
 check "admin host requires Cloudflare Access" "302 *.cloudflareaccess.com" \
   "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$admin/" | sed -E 's#https://([^/]+)/.*#\1#')"
