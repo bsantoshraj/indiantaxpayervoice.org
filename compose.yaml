@@ -47,8 +47,11 @@ services:
       WORDPRESS_DB_NAME: ${WP_DB_NAME}
       WORDPRESS_DB_USER: ${WP_DB_USER}
       WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
+      ITV_CF_BEACON_TOKEN: ${ITV_CF_BEACON_TOKEN:-}
       WORDPRESS_CONFIG_EXTRA: |
         define('DISALLOW_FILE_EDIT', true);
+        // Cloudflare Web Analytics beacon token (public; empty = no analytics).
+        define('ITV_CF_BEACON_TOKEN', getenv('ITV_CF_BEACON_TOKEN') ?: '');
         // Behind the HTTPS proxy (staging/production); WordPress is not reachable directly.
         if (($$_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') { $$_SERVER['HTTPS'] = 'on'; }
         define('WP_AUTO_UPDATE_CORE', 'minor');
@@ -80,6 +83,7 @@ services:
       WP_ADMIN_USER: ${WP_ADMIN_USER}
       WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
       WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      ITV_ENV: ${ITV_ENV:-local}
     volumes:
       - wp_html:/var/www/html
       - ./wordpress/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
