@@ -61,7 +61,7 @@ flowchart LR
 Cloudflare serves cached pages to anonymous visitors (up to 10 minutes old; every
 deploy purges the cache). Logged-in editors, `/wp-admin`, `/wp-login.php`, the REST
 API and previews always reach WordPress. Statistics shown on pages
-(`[itv_counters]`, `[itv_states_table]`) are fetched **server-side** from the
+(`[itv_counters]`, `[itv_state_map]` tile-grid map, `[itv_states_table]`) are fetched **server-side** from the
 statistics server and cached for 60 seconds; if they are unavailable the page says
 so instead of showing a misleading zero.
 

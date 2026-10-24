@@ -261,8 +261,8 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - [x] Aggregator with validation, dedupe, suppression, atomic publish (57 tests)
 - [x] Static statistics API on its own host, cached by Cloudflare; metric definitions and refresh on the methodology page
 - [x] Counters + state table in WordPress (honest zero and suppressed states)
-- [ ] **Differencing protection** (decided 2026-10-24): publish hourly, round published counts to the nearest 5, test on synthetic data
-- [ ] **Accessible state/UT map** (decided: a tile-grid map, one equal tile per state/UT, no boundaries, so no Survey of India boundary licensing; keyboard and screen-reader accessible, with a table alternative)
+- [x] **Differencing protection**: hourly releases, counts rounded to the nearest 5, whole percentages from rounded figures; synthetic-data tests (#26)
+- [x] **Accessible state/UT map**: tile-grid map (`[itv_state_map]`), one equal tile per state/UT, no boundaries; each tile focusable with a tooltip and a screen-reader description; distinct "not shown" and "no responses" tiles; the state table remains the text alternative. Text contrast at least 5.2:1
 - [ ] **Sector × concern heat map and demographic charts** (decided: server-rendered HTML/SVG in the WordPress plugin, a data table under each, no third-party JavaScript; filters as progressive enhancement)
 - [ ] Trends from the change in totals between releases (responses carry no dates)
 - [ ] Publish to Spaces/CDN (only if production load needs it; Cloudflare already caches the static files)
