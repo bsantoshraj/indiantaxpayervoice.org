@@ -84,3 +84,12 @@ resource "cloudflare_ruleset" "rate_limit" {
     }
   }]
 }
+
+# Bot Fight Mode stays off (owner decision 2026-10-24). On the Free plan it cannot
+# be given exceptions: it challenged the CI smoke tests (GitHub runners on Azure)
+# and would challenge scripted users of the public statistics. The survey is
+# protected by the proof-of-work gate, rate limits and the managed WAF instead.
+resource "cloudflare_bot_management" "zone" {
+  zone_id    = local.zone_id
+  fight_mode = false
+}
