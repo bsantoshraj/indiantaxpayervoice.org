@@ -69,6 +69,22 @@ created by hand in Cloudflare; `survey-admin-staging` is in Terraform.
 allowlist into the droplet's `.env`, which the origin check uses). They also need a
 LimeSurvey account.
 
+## SEO and analytics
+
+- `wordpress/mu-plugins/itv-seo.php` adds meta descriptions (each page's excerpt, set
+  from the description column in `wordpress/bootstrap.sh`), Open Graph and Twitter tags
+  with `themes/itv/assets/share.png`, Organization/WebSite structured data, `en-IN` and
+  sitemaps (`/wp-sitemap.xml`). Only production is indexable: `bootstrap.sh` sets
+  "discourage search engines" unless `ITV_ENV=production`, and staging also sends
+  `X-Robots-Tag: noindex`.
+- **Search Console:** add a *Domain* property for `indiantaxpayervoice.org` in Google
+  Search Console, copy the `google-site-verification=…` TXT value, and add it as a TXT
+  record (in `infra/terraform/cloudflare`), then verify and submit
+  `https://indiantaxpayervoice.org/wp-sitemap.xml` once production exists.
+- **Cloudflare Web Analytics** (cookieless; website only, never the survey): set
+  `ITV_CF_BEACON_TOKEN` in the droplet's `.env` to the site's beacon token. Creating the
+  site via Terraform needs the token permission *Account › Account Web Analytics › Edit*.
+
 ## Backups and restore
 
 `infra/staging/backup-db.sh` runs daily at 02:17 UTC (`/etc/cron.d/itv-backup`, log
