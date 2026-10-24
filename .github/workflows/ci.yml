@@ -64,7 +64,7 @@ jobs:
       - name: Terraform format and validate
         run: |
           terraform fmt -check -recursive infra/terraform
-          for dir in infra/terraform/staging infra/terraform/cloudflare; do
+          for dir in infra/terraform/staging infra/terraform/production infra/terraform/cloudflare; do
             terraform -chdir="$dir" init -backend=false -input=false >/dev/null
             terraform -chdir="$dir" validate
           done
