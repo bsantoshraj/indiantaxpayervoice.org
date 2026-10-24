@@ -31,7 +31,7 @@ reviewed in a PR:
 | Directory | Manages |
 |---|---|
 | `infra/terraform/staging` | Droplet, firewall (HTTPS from Cloudflare only, SSH key-only), SSH keys, project |
-| `infra/terraform/cloudflare` | Zone-wide: cache rules, browser cache TTL, tiered cache, and the LimeSurvey admin (DNS, Access application, policy, email-code login). Shared by staging and production because a zone has one cache ruleset |
+| `infra/terraform/cloudflare` | Zone-wide: cache rules, browser cache TTL, tiered cache, WAF and rate limiting, and the admins (DNS, Access applications, policy, email-code login). Shared by staging and production because a zone has one cache ruleset |
 
 ```bash
 export DIGITALOCEAN_TOKEN="$(cat ~/.config/itv/do_token)"
@@ -50,6 +50,16 @@ created by hand in Cloudflare; `survey-admin-staging` is in Terraform.
   certificate (valid only behind Cloudflare, so these names must stay proxied).
 - **Caching:** see [how-it-works.md](how-it-works.md#hostnames-staging). Purge one
   environment only: `scripts/purge-cdn.sh <hostname>...`.
+- **WAF** (`infra/terraform/cloudflare/waf.tf`): Cloudflare Managed Free Ruleset on
+  every host; custom rules block `/xmlrpc.php`, LimeSurvey admin routes on the public
+  survey host, and methods a host does not need (statistics are read-only).
+- **Rate limiting:** survey POSTs (answers and bot-check verifications) over
+  `survey_posts_per_10s` (50) per IP per 10 s are blocked for 10 s at the edge; nginx
+  limits again at the origin. Indian mobile carriers share IPs (CGNAT): revisit both
+  limits against real traffic before production.
+- **WordPress admin** (`/wp-admin`, `/wp-login.php`) is behind Cloudflare Access with
+  the same policy as the LimeSurvey admin; Caddy re-checks the token (`forward_auth`
+  to the gate). `ITV_ACCESS_AUD` lists both applications.
 - **Email address obfuscation** is off (Terraform), so addresses are shown as written,
   including to visitors without JavaScript.
 
