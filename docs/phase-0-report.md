@@ -231,7 +231,7 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 | Bot gate + rate limits (on in staging/prod; off locally) | ✅ built, 21 tests | ☐ verify in browser over HTTPS |
 | End-to-end survey submission test (`tests/e2e`) | ✅ passing | ☐ |
 | Domain, TLS, Cloudflare WAF | — | ☐ |
-| Backups + restore test, monitoring, billing alerts | — | ☐ |
+| Backups + restore test (staging: daily age-encrypted dumps; restore test PASS 2026-10-24, 2 s, byte-identical; off-droplet copy pending), monitoring, billing alerts | — | ◐ |
 | Privacy notice, terms, methodology reviewed (legal + editorial) | drafts | ☐ |
 - **Acceptance:** on staging, a tester completes the survey on a phone over HTTPS through the gate; the response appears in the statistics within 15 minutes; a DB restore into a scratch DB succeeds; Cloudflare and billing alerts are configured; legal sign-off on the privacy notice.
 

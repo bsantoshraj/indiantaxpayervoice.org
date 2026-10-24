@@ -27,6 +27,8 @@ if [[ ! -f .env ]]; then
   ./infra/staging/configure-env.sh "$ip"
 fi
 sudo ./infra/staging/setup-host-db.sh
+command -v age >/dev/null || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq age >/dev/null
+sudo install -m 644 infra/staging/itv-backup.cron /etc/cron.d/itv-backup   # daily encrypted DB backup
 [[ -f var/certs/server.crt ]] || ./scripts/make-local-certs.sh "$ip" >/dev/null   # nginx's optional :8443 listener
 docker compose build -q
 docker compose up -d

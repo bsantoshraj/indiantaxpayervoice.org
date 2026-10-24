@@ -5,6 +5,7 @@ package_update: true
 package_upgrade: true
 packages:
   - mariadb-server
+  - age             # encrypts database backups (infra/staging/backup-db.sh)
   - ufw
   - unattended-upgrades
   - fail2ban

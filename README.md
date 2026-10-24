@@ -63,3 +63,25 @@ it. SSH is key-only (no passwords, no root) from any address; `extra_ssh_key_nam
 lists the DigitalOcean account keys allowed in. A single host MariaDB is weaker
 isolation than separate servers — acceptable for staging (no real data); use a
 managed database for the survey in production.
+
+### Backups and restore test (staging)
+
+`infra/staging/backup-db.sh` runs daily at 02:17 UTC (`/etc/cron.d/itv-backup`,
+log `/var/log/itv-backup.log`). It writes a consistent dump of each database plus
+a separate copy of `.env` (LimeSurvey's encryption keys) to `/var/backups/itv`,
+encrypted with [age](https://age-encryption.org) to `infra/staging/backup-recipient.txt`,
+and keeps 14 days. The private key is **not** on the droplet (it cannot read its
+own backups); it lives at `~/.config/itv/backup-age.key` on the admin machine and
+must also be kept somewhere offline — without it the backups are unreadable.
+
+Restore test (monthly, and after any DB or backup change):
+
+```bash
+ssh deploy@<ip> 'sudo /opt/itv/infra/staging/restore-test.sh /dev/stdin' < ~/.config/itv/backup-age.key
+```
+
+It restores the newest backups into scratch databases (decrypted data and key
+stay in `/dev/shm`), re-dumps them and requires a byte-identical match, checks
+WordPress and the active survey, confirms the secrets backup holds the current
+LimeSurvey keys, and drops the scratch databases. Not yet done: copying backups
+off the droplet (planned: a separate Spaces bucket).
