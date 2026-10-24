@@ -31,7 +31,7 @@ Markers: ✅ done and verified · ◐ partly done · ❌ not done · — out of 
 | Criterion | Status | Evidence |
 |---|---|---|
 | A tester completes the survey on a phone over HTTPS through the gate | ✅ | Response 5, 2026-10-24: public link at 14:13:56 IST; the phone solved the bot check in about 3 s (`/gate/verify` 303); 5 answer pages submitted by 14:14:59 IST |
-| The response appears in the statistics within 15 minutes | ✅ | Response 5 reached the public statistics **2 min 32 s** after submission, seen through Cloudflare (`valid_responses` 1 → 2). The smoke tests fail if statistics are ever older than 15 minutes |
+| The response appears in the statistics within 15 minutes | ✅ (criterion relaxed) | Response 5 reached the public statistics **2 min 32 s** after submission, seen through Cloudflare (`valid_responses` 1 → 2), under the original 5-minute refresh. Since Phase 2's differencing protection, statistics refresh **hourly** with counts rounded to 5, so the criterion is now "within about 75 minutes"; the smoke tests fail if statistics are older than that |
 | A database restore into a scratch database succeeds | ✅ | `restore-test.sh`: PASS on 5 consecutive runs (about 2 s), byte-identical re-dump |
 | Cloudflare and billing alerts are configured | — | Out of Phase 1 scope by owner decision (monitoring and alerting deferred to production, #5) |
 | Legal sign-off on the privacy notice | ◐ | Notice written to match the system's actual behaviour; formal legal review not yet done |

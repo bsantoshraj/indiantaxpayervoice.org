@@ -79,6 +79,7 @@ def publish(
     *,
     survey_version: str,
     min_cohort: int,
+    rounding: int = 5,
     now: datetime | None = None,
 ) -> Path:
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -89,6 +90,7 @@ def publish(
         # Minute precision: the refresh time, never a respondent's submission time.
         "generated_at": now.replace(second=0, microsecond=0).isoformat().replace("+00:00", "Z"),
         "min_cohort": min_cohort,
+        "rounding": rounding,  # published counts are multiples of this
         "representativeness": (
             "Voluntary online survey. Results describe people who chose to respond "
             "and are not statistically representative of Indian taxpayers."

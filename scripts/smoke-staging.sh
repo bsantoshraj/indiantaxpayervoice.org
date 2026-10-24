@@ -35,7 +35,8 @@ check "stats summary" 200 "$(code "$stats/v1/statistics/summary")"
 
 generated=$(curl -s --max-time 20 "$stats/v1/statistics/summary" | python3 -c 'import sys,json; print(json.load(sys.stdin)["meta"]["generated_at"])' 2>/dev/null)
 age=$(( $(date -u +%s) - $(date -u -d "${generated:-1970-01-01}" +%s) ))
-check "stats generated within 15 minutes (${age}s ago)" "yes" "$([[ $age -lt 900 ]] && echo yes || echo no)"
+# Statistics refresh hourly (differencing protection): allow one interval plus 15 minutes.
+check "stats generated within 75 minutes (${age}s ago)" "yes" "$([[ $age -lt 4500 ]] && echo yes || echo no)"
 
 for url in "$survey/gate/health" "$survey/index.php/1?lang=en" "$wp/wp-login.php"; do
   cache "$url" >/dev/null

@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from itv_aggregator.aggregate import NONE, PUBLISHED, SUPPRESSED, Policy, aggregate, protect_partition
+from itv_aggregator.aggregate import NONE, PUBLISHED, SUPPRESSED, Policy, aggregate, protect_partition, round_to
 
 from conftest import resp
 
@@ -112,10 +112,11 @@ def test_multi_select_percentages_can_exceed_100(schema):
     assert sum(c["percent"] for c in out["summary"]["concerns"] if c["percent"]) == pytest.approx(300.0)
 
 
-def test_trends_bucket_by_week_without_precise_times(schema):
-    rs = [resp(1, d=date(2026, 11, 2)), resp(2, d=date(2026, 11, 8)), resp(3, d=date(2026, 11, 9))]
+def test_trends_bucket_by_week_suppressed_and_rounded(schema):
+    rs = [resp(i, d=date(2026, 11, 2 + i % 7)) for i in range(22)]            # one week, 22 responses
+    rs += [resp(100 + i, d=date(2026, 11, 9)) for i in range(3)]             # next week, only 3
     weeks = aggregate(rs, schema, Policy(K))["trends"]["weeks"]
-    assert weeks == [{"week_start": "2026-11-02", "count": 2}, {"week_start": "2026-11-09", "count": 1}]
+    assert weeks == [{"week_start": "2026-11-02", "count": 20}, {"week_start": "2026-11-09", "count": None}]
 
 
 def test_demographic_breakdown_includes_not_answered_and_suppresses(schema):
@@ -160,7 +161,7 @@ def test_distributions_partition_and_multi_select(schema):
 def test_withheld_dates_are_not_published_as_a_week(schema):
     rs = [resp(1, d=date(2026, 11, 2)), resp(2, d=None), resp(3, d=None)]
     trends = aggregate(rs, schema, Policy(K))["trends"]
-    assert trends["weeks"] == [{"week_start": "2026-11-02", "count": 1}]
+    assert trends["weeks"] == [{"week_start": "2026-11-02", "count": None}]  # fewer than K: hidden
     assert trends["date_not_recorded"] == 2
 
 
@@ -174,3 +175,57 @@ def test_high_income_bands_are_published_and_suppressed_like_any_other(schema):
     groups = by_code(next(b for b in out["breakdowns"]["breakdowns"] if b["question"] == "INCOME")["groups"])
     assert groups["B5"]["status"] == PUBLISHED and groups["B5"]["count"] == 25
     assert groups["B6"]["status"] == SUPPRESSED and groups["B6"]["count"] is None
+
+
+# --- Differencing protection: rounding (Phase 2) ---------------------------------
+
+def test_round_to_nearest_five():
+    assert [round_to(n, 5) for n in (20, 22, 23, 24, 25, 27, 28, 101)] == [20, 20, 25, 25, 25, 25, 30, 100]
+    assert round_to(37, 1) == 37
+
+
+def _published_numbers(node):
+    """Every count, denominator and percent in a published aggregate, recursively."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in ("count", "denominator", "valid_responses", "percent") and value is not None:
+                yield key, value
+            yield from _published_numbers(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _published_numbers(item)
+
+
+def test_synthetic_release_publishes_only_rounded_counts_and_whole_percentages(schema):
+    import random
+    rng = random.Random(7)
+    states, industries = list(schema.states), list(schema.industries)
+    concerns = list(schema.concerns)
+    rs = [resp(i, state=rng.choice(states[:6]), industry=rng.choice(industries[:5]),
+               INCOME=rng.choice(["B1", "B2", "B3", "B5", "PNTS"]),
+               concerns=rng.sample(concerns[:5], rng.randint(1, 3)))
+          for i in range(1237)]
+    out = aggregate(rs, schema, Policy(K))
+    numbers = list(_published_numbers(out))
+    assert numbers, "nothing published"
+    for key, value in numbers:
+        if key == "percent":
+            assert isinstance(value, int), (key, value)
+        else:
+            assert value % 5 == 0, (key, value)
+    assert out["summary"]["valid_responses"] == 1235
+
+
+def test_one_more_response_does_not_change_figures_away_from_a_rounding_boundary(schema):
+    base = [resp(i, state="KA", concerns=["JOBLOSS"]) for i in range(40)]
+    base += [resp(100 + i, state="MH", concerns=["HEALTH"]) for i in range(60)]
+    before = aggregate(base, schema, Policy(K))
+    after = aggregate(base + [resp(999, state="KA", concerns=["JOBLOSS"])], schema, Policy(K))
+    assert before["states"] == after["states"]          # 40 -> 41 and 100 -> 101 both publish as 40 and 100
+    assert before["summary"] == after["summary"]
+
+
+def test_suppression_uses_exact_counts_not_rounded_ones(schema):
+    rs = [resp(i, state="KA") for i in range(19)] + [resp(100 + i, state="MH") for i in range(40)]
+    states = by_code(aggregate(rs, schema, Policy(K))["states"]["states"])
+    assert states["KA"]["status"] == SUPPRESSED      # 19 is below K even though it would round to 20
