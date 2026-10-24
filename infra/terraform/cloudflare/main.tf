@@ -31,6 +31,15 @@ resource "cloudflare_zone_setting" "browser_cache_ttl" {
   value      = 0 # 0 = respect existing headers
 }
 
+# Show email addresses as written. Cloudflare's default obfuscation replaces them
+# with "[email protected]" for visitors without JavaScript (an accessibility
+# problem); the published contact address is meant to be read.
+resource "cloudflare_zone_setting" "email_obfuscation" {
+  zone_id    = local.zone_id
+  setting_id = "email_obfuscation"
+  value      = "off"
+}
+
 # Cloudflare data centres fetch from each other before the origin (free plan).
 resource "cloudflare_tiered_cache" "smart" {
   zone_id = local.zone_id

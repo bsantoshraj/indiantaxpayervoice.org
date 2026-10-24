@@ -50,9 +50,8 @@ created by hand in Cloudflare; `survey-admin-staging` is in Terraform.
   certificate (valid only behind Cloudflare, so these names must stay proxied).
 - **Caching:** see [how-it-works.md](how-it-works.md#hostnames-staging). Purge one
   environment only: `scripts/purge-cdn.sh <hostname>...`.
-- **Email address obfuscation** is on (Cloudflare default): addresses in pages are
-  rewritten and decoded by a small script in the browser. Visitors without JavaScript
-  see "[email protected]".
+- **Email address obfuscation** is off (Terraform), so addresses are shown as written,
+  including to visitors without JavaScript.
 
 **Add a LimeSurvey administrator.** Add the address to `survey_admin_emails` in
 `infra/terraform/cloudflare/variables.tf`, open a PR, then
@@ -106,7 +105,7 @@ deploy key. Run it after changing either.
 |---|---|
 | Browser says `DNS_PROBE_FINISHED_NXDOMAIN` for a new hostname | Your resolver cached "not found" from before the record existed (up to 30 min). Clear `chrome://net-internals/#dns`, flush the OS cache, or wait |
 | Page still shows old content after a deploy | Browser cache (hard refresh), or the CDN cache if the deploy's purge step warned. `curl -sI <url> \| grep -i cf-cache-status` shows what Cloudflare served |
-| "[email protected]" instead of an address | Cloudflare email obfuscation and JavaScript blocked in that browser |
+| "[email protected]" instead of an address | Cloudflare email obfuscation was switched back on; it is `off` in `infra/terraform/cloudflare/main.tf` |
 | Cloudflare error 526 / 525 | Origin certificate invalid or Caddy not serving that hostname: check `docker compose logs caddy` and that the host is in the Caddyfile |
 | "Unable to find your Access application" | A truncated or old login link: always start at the app's address |
 | Image builds on the droplet time out | Downloads from PyPI are unreliable from `blr1`; deploy through CI (images are built on GitHub) |

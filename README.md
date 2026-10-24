@@ -14,6 +14,7 @@ representative of all taxpayers.
 | [CI/CD](docs/ci-cd.md) | ship a change, roll back, and understand what the pipeline can and cannot do |
 | [Operating staging](docs/operations.md) | change infrastructure, manage Cloudflare and admins, back up and restore, rotate secrets, troubleshoot |
 | [Phase 0 report](docs/phase-0-report.md) | see the architecture decisions, threat model, cost estimates and phase plan |
+| [Phase 1 report](docs/phase-1-report.md) | see what is done, what was verified, and what remains before Phase 1 is complete |
 | [`claude.md`](claude.md) | read the full project brief and requirements |
 
 ## Environments
