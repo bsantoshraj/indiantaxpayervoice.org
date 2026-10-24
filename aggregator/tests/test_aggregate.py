@@ -162,3 +162,15 @@ def test_withheld_dates_are_not_published_as_a_week(schema):
     trends = aggregate(rs, schema, Policy(K))["trends"]
     assert trends["weeks"] == [{"week_start": "2026-11-02", "count": 1}]
     assert trends["date_not_recorded"] == 2
+
+
+def test_high_income_bands_are_published_and_suppressed_like_any_other(schema):
+    labels = schema.questions["INCOME"].options
+    assert labels["B4"] == "₹24 lakh to ₹50 lakh" and "B5" in labels and labels["B6"] == "Above ₹1 crore"
+    rs = [resp(i, INCOME="B5", concerns=["JOBLOSS"]) for i in range(25)]
+    rs += [resp(100 + i, INCOME="B6", concerns=["HEALTH"]) for i in range(2)]  # rare band
+    rs += [resp(200 + i, INCOME="B1", concerns=["HEALTH"]) for i in range(25)]
+    out = aggregate(rs, schema, Policy(K))
+    groups = by_code(next(b for b in out["breakdowns"]["breakdowns"] if b["question"] == "INCOME")["groups"])
+    assert groups["B5"]["status"] == PUBLISHED and groups["B5"]["count"] == 25
+    assert groups["B6"]["status"] == SUPPRESSED and groups["B6"]["count"] is None
