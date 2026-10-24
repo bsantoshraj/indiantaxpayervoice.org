@@ -12,7 +12,7 @@ location ~* ^/(index\.php/)?(admin|rest|installer)(/|$) { return 404; }
 # Internal: ask the gate whether this request carries a valid pass.
 location = /_gate_check {
     internal;
-    proxy_pass http://gate:8000/gate/check;
+    proxy_pass http://$gate_host:8000/gate/check;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
     proxy_set_header Cookie $http_cookie;
@@ -21,7 +21,7 @@ location = /_gate_check {
 location /gate/ {
     limit_req zone=gate burst=30 nodelay;
     limit_req_status 429;
-    proxy_pass http://gate:8000;
+    proxy_pass http://$gate_host:8000;
 }
 
 # Survey-taking pages (path URL format: /index.php/<surveyid>, /index.php/survey/...).
@@ -30,7 +30,7 @@ location ~ ^/index\.php/([0-9]+|survey/) {
     error_page 401 = @to_gate;
     limit_req zone=survey_post burst=60 nodelay;
     limit_req_status 429;
-    proxy_pass http://limesurvey:8080;
+    proxy_pass http://$limesurvey_host:8080;
 }
 
 location @to_gate {
@@ -39,5 +39,5 @@ location @to_gate {
 
 # Survey assets and everything else (the admin is refused above).
 location / {
-    proxy_pass http://limesurvey:8080;
+    proxy_pass http://$limesurvey_host:8080;
 }

@@ -145,12 +145,12 @@ jobs:
       - name: Sync code
         run: |
           rsync -az --delete --exclude-from=infra/staging/rsync-excludes.txt \
-            -e "ssh -i $HOME/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes" ./ "deploy@$HOST:"
+            -e "ssh -i $HOME/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=8" ./ "deploy@$HOST:"
       - name: Deploy (pull this commit's images)
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          printf '%s' "$REGISTRY_TOKEN" | ssh -i ~/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes \
+          printf '%s' "$REGISTRY_TOKEN" | ssh -i ~/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=8 \
             "deploy@$HOST" "deploy $SHA"
       - name: Purge the staging CDN cache
         env:
