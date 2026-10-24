@@ -3,10 +3,15 @@
 //   CHROME=... SURVEY_URL=http://localhost:8081/index.php/<sid>?lang=en node survey_submit.mjs
 import puppeteer from '../responsive/node_modules/puppeteer-core/lib/esm/puppeteer/puppeteer-core.js';
 
+import { readFileSync } from 'node:fs';
+
 const url = process.env.SURVEY_URL;
 const singles = ['Y', 'EDU', 'SALPR', 'B2', 'PNTS', 'A3', 'M1', 'EMP']; // preferred radio values
 const select = { STATE: 'KA' };
-const checks = ['JOBLOSS', 'HEALTH', 'UNEMP', 'HINS'];
+// LimeSurvey 7 names checkboxes by internal IDs (Q35_S40), so tick them by label text.
+const spec = JSON.parse(readFileSync(new URL('../../survey/questionnaire-v1.json', import.meta.url)));
+const options = Object.fromEntries(spec.questions.map((q) => [q.code, q.options || {}]));
+const checks = [options.CONCERN.JOBLOSS, options.CONCERN.HEALTH, options.PRIORITY.UNEMP, options.PRIORITY.HINS];
 
 const browser = await puppeteer.launch({ executablePath: process.env.CHROME, args: ['--no-sandbox'] });
 const page = await browser.newPage();
@@ -40,13 +45,15 @@ for (let step = 0; step < 10; step++) {
       if (want) { s.value = want; s.dispatchEvent(new Event('change', { bubbles: true })); }
     });
     document.querySelectorAll('input[type=checkbox]').forEach((c) => {
-      if (checks.some((code) => c.name.endsWith(code)) && !c.checked) c.click();
+      const label = document.querySelector(`label[for="${c.id}"]`)?.innerText.trim();
+      if (checks.includes(label) && !c.checked) c.click();
     });
   }, singles, select, checks);
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-    page.click('#ls-button-submit'),
-  ]);
+  // LimeSurvey 7 swaps pages in place (no full navigation), so wait for the content to change.
+  const before = await page.evaluate(() => document.body.innerText);
+  await page.click('#ls-button-submit');
+  await page.waitForFunction((prev) => document.body.innerText !== prev, { timeout: 20000 }, before);
+  await page.waitForNetworkIdle({ idleTime: 300, timeout: 20000 });
 }
 await page.screenshot({ path: 'survey-failure.png', fullPage: true });
 console.error('FAIL: survey did not reach the completion page (see survey-failure.png)');

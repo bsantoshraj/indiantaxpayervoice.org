@@ -1,0 +1,65 @@
+#cloud-config
+# Base host setup only. No secrets here: user_data is stored in Terraform state
+# and readable from the droplet metadata service.
+package_update: true
+package_upgrade: true
+packages:
+  - mariadb-server
+  - ufw
+  - unattended-upgrades
+  - fail2ban
+  - rsync
+  - ca-certificates
+  - curl
+
+users:
+  - default
+  - name: deploy
+    groups: [sudo]   # docker group added after Docker is installed (runcmd)
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-itv.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+  - path: /etc/mysql/mariadb.conf.d/90-itv.cnf
+    content: |
+      # Containers reach the host DB via the Docker bridge; ufw + the DO cloud
+      # firewall keep 3306 closed to the internet. Small-memory tuning for 2 GB.
+      [mysqld]
+      bind-address            = 0.0.0.0
+      skip-name-resolve
+      innodb_buffer_pool_size = 256M
+      max_connections         = 100
+      performance_schema      = OFF
+      local_infile            = 0
+  - path: /etc/docker/daemon.json
+    content: |
+      { "log-driver": "json-file", "log-opts": { "max-size": "10m", "max-file": "3" } }
+
+runcmd:
+  # Docker from the official repository
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  - usermod -aG docker deploy
+  # SSH key for deploy (same as the droplet's root key)
+  - mkdir -p /home/deploy/.ssh && cp /root/.ssh/authorized_keys /home/deploy/.ssh/ && chown -R deploy:deploy /home/deploy/.ssh && chmod 700 /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/authorized_keys
+  # 2 GB swap: two PHP apps + MariaDB on 2 GB RAM
+  - fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  # Host firewall (defence in depth behind the DO cloud firewall)
+  - ufw default deny incoming
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow from 172.16.0.0/12 to any port 3306 proto tcp
+  - ufw --force enable
+  - systemctl restart mariadb ssh
+  - mkdir -p /opt/itv && chown deploy:deploy /opt/itv

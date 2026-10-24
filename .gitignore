@@ -18,3 +18,10 @@ __pycache__/
 .venv/
 node_modules/
 survey-failure.png
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+.terraform.lock.hcl.bak

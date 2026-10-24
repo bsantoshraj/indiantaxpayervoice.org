@@ -11,7 +11,7 @@ fi
 rand() { openssl rand -base64 32 | tr -d '/+=' | cut -c1-32; }
 
 # LimeSurvey stores libsodium keys hex-encoded in security.php.
-keys=$(docker run --rm --entrypoint php martialblog/limesurvey:6.17.18-261021-apache -r '
+keys=$(docker run --rm --entrypoint php martialblog/limesurvey:7.5.1-261021-apache -r '
   $kp = sodium_crypto_box_keypair();
   echo "LS_ENCRYPT_KEYPAIR=", bin2hex($kp), "\n";
   echo "LS_ENCRYPT_PUBLIC_KEY=", bin2hex(sodium_crypto_box_publickey($kp)), "\n";

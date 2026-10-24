@@ -1,7 +1,7 @@
 # Shared by the HTTP and HTTPS servers in survey.conf.
 proxy_set_header Host              $http_host;
 proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-Proto $forwarded_proto;
 
 # Internal: ask the gate whether this request carries a valid pass.
 location = /_gate_check {

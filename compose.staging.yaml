@@ -1,0 +1,28 @@
+# Staging overlay (DigitalOcean droplet). Used via COMPOSE_FILE in the staging .env:
+#   COMPOSE_FILE=compose.yaml:compose.staging.yaml
+# - MariaDB runs on the host (COMPOSE_PROFILES has no "localdb")
+# - Caddy terminates HTTPS with Let's Encrypt; every app port stays on 127.0.0.1
+services:
+  caddy:
+    image: caddy:2.11.6-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      WP_HOST: ${WP_HOST}
+      SURVEY_HOST: ${SURVEY_HOST}
+      STATS_HOST: ${STATS_HOST}
+    volumes:
+      # Caddyfile (Let's Encrypt, sslip.io) or Caddyfile.origin-ca (Cloudflare Origin CA)
+      - ./infra/staging/${CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
+      - ./var/origin-tls:/etc/caddy/origin-tls:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [wordpress, survey-proxy, stats]
+    networks: [wp_net, survey_net, stats_net]
+
+volumes:
+  caddy_data:
+  caddy_config:

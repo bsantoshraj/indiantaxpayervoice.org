@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Local only: import and activate the v1 survey in LimeSurvey, enable the
+# Local and staging: import and activate the v1 survey in LimeSurvey, enable the
 # RemoteControl API, and create a least-privilege "stats-exporter" account for
 # the aggregator. Writes ITV_LS_SURVEY_ID into .env. Secrets are never printed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 set -a; . ./.env; set +a
 
-sql() { docker compose exec -T ls-db sh -c 'MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot -N limesurvey'; }
+if [[ "${LS_DB_HOST:-ls-db}" == "host.docker.internal" ]]; then
+  sql() { sudo mariadb -N "$LS_DB_NAME"; }   # staging: MariaDB on the host
+else
+  sql() { docker compose exec -T ls-db sh -c 'MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot -N limesurvey'; }
+fi
 
 echo "Enabling RemoteControl (JSON-RPC)…"
 sql <<'SQL'

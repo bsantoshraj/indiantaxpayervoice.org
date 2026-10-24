@@ -190,10 +190,12 @@ def aggregate(responses: list[Response], schema: Schema, policy: Policy) -> dict
         ],
     }
 
-    weekly = Counter(_week_start(r.submit_date) for r in responses)
+    weekly = Counter(_week_start(r.submit_date) for r in responses if r.submit_date)
     trends = {
         "granularity": "week",
         "weeks": [{"week_start": w.isoformat(), "count": n} for w, n in sorted(weekly.items())],
+        # Anonymised LimeSurvey surveys do not record dates; never invent them.
+        "date_not_recorded": sum(1 for r in responses if r.submit_date is None),
     }
 
     return {
