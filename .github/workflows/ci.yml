@@ -1,0 +1,165 @@
+# CI/CD: every PR is tested; every merge to main is built once, pushed to GHCR
+# (tagged with the commit SHA) and deployed to staging, then smoke-tested.
+# Production (added when it exists) will promote the same SHA's images.
+#
+# Repository secrets:   STAGING_SSH_KEY (restricted CI key), CF_PURGE_TOKEN (Cache Purge only)
+# Repository variables: STAGING_HOST, STAGING_SSH_KNOWN_HOSTS, CF_ZONE_ID
+# Terraform is not applied here: its state lives on the admin machine.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Redeploy an earlier main commit to staging (full 40-character SHA; its images must exist). Empty = latest."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  REGISTRY: ghcr.io/bsantoshraj
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Aggregator tests
+        working-directory: aggregator
+        run: |
+          pip install -q pytest
+          python -m pytest -q
+      - name: Gate tests
+        working-directory: gate
+        run: |
+          pip install -q -r requirements.txt pytest
+          python -m pytest -q
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: shellcheck
+        run: shellcheck -S warning scripts/*.sh infra/staging/*.sh
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.9.8
+      - name: Terraform format and validate
+        run: |
+          terraform fmt -check -recursive infra/terraform
+          for dir in infra/terraform/staging infra/terraform/cloudflare; do
+            terraform -chdir="$dir" init -backend=false -input=false >/dev/null
+            terraform -chdir="$dir" validate
+          done
+      - name: Compose and nginx configuration
+        run: |
+          docker compose --env-file .env.example config -q
+          mkdir -p var/certs
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=ci \
+            -keyout var/certs/server.key -out var/certs/server.crt 2>/dev/null
+          docker run --rm --add-host gate:127.0.0.1 --add-host limesurvey:127.0.0.1 \
+            -v "$PWD/infra/nginx/survey.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "$PWD/infra/nginx/survey-locations.inc:/etc/nginx/snippets/survey-locations.inc:ro" \
+            -v "$PWD/var/certs:/etc/nginx/certs:ro" nginx:1.30.6-alpine nginx -t
+          docker run --rm -v "$PWD/infra/nginx/stats.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginx:1.30.6-alpine nginx -t
+
+  images:
+    name: images (${{ matrix.name }})   # stable check names, required by the main ruleset
+    needs: [test, lint]
+    if: github.event_name != 'workflow_dispatch' || inputs.sha == ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: gate
+            context: gate
+            file: gate/Dockerfile
+          - name: aggregator
+            context: .
+            file: aggregator/Dockerfile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.REGISTRY }}/itv-${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy-staging:
+    needs: [test, lint, images]
+    # Only main deploys; a failed test or lint never deploys (images is skipped on rollbacks).
+    if: >-
+      always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      && needs.test.result == 'success' && needs.lint.result == 'success'
+      && (needs.images.result == 'success' || needs.images.result == 'skipped')
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    env:
+      SHA: ${{ inputs.sha || github.sha }}
+      HOST: ${{ vars.STAGING_HOST }}
+    steps:
+      - name: Check the commit to deploy
+        run: '[[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Not a full commit SHA: $SHA"; exit 1; }'
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - name: SSH key and pinned host key
+        env:
+          KEY: ${{ secrets.STAGING_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.STAGING_SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/ci && chmod 600 ~/.ssh/ci
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Sync code
+        run: |
+          rsync -az --delete --exclude-from=infra/staging/rsync-excludes.txt \
+            -e "ssh -i $HOME/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes" ./ "deploy@$HOST:"
+      - name: Deploy (pull this commit's images)
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | ssh -i ~/.ssh/ci -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "deploy@$HOST" "deploy $SHA"
+      - name: Purge the staging CDN cache
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PURGE_TOKEN }}
+          ITV_CF_ZONE_ID: ${{ vars.CF_ZONE_ID }}
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then echo "::warning::CF_PURGE_TOKEN not set; cache not purged"; exit 0; fi
+          scripts/purge-cdn.sh staging.indiantaxpayervoice.org stats-staging.indiantaxpayervoice.org
+      - name: Smoke tests
+        run: |
+          sleep 10
+          scripts/smoke-staging.sh

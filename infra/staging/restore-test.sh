@@ -30,8 +30,10 @@ q() { mariadb -N -B "$1" -e "$2"; }
 
 # Newest run that produced all three files; never mix files from different runs.
 set_ts=""
-for env_file in $(ls -1r "$dest"/env-*.age 2>/dev/null); do
-  ts=$(basename "$env_file" .age); ts=${ts#env-}
+shopt -s nullglob
+env_files=("$dest"/env-*.age)   # timestamps sort lexically; walk newest first
+for (( i = ${#env_files[@]} - 1; i >= 0; i-- )); do
+  ts=$(basename "${env_files[i]}" .age); ts=${ts#env-}
   if [[ -f "$dest/$WP_DB_NAME-$ts.sql.gz.age" && -f "$dest/$LS_DB_NAME-$ts.sql.gz.age" ]]; then set_ts=$ts; break; fi
 done
 [[ -n "$set_ts" ]] || { echo "FAIL: no complete backup set in $dest"; exit 1; }

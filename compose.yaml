@@ -141,7 +141,7 @@ services:
   gate:
     <<: *restart
     build: ./gate
-    image: itv-gate:local
+    image: ${ITV_IMAGE_REPO:-itv}-gate:${ITV_IMAGE_TAG:-local}   # CI: ghcr.io/bsantoshraj/itv-gate:<sha>
     environment:
       ITV_ENV: ${ITV_ENV:-production}
       ITV_GATE_ENABLED: ${ITV_GATE_ENABLED:-1}
@@ -174,7 +174,7 @@ services:
     build:
       context: .
       dockerfile: aggregator/Dockerfile
-    image: itv-aggregator:local
+    image: ${ITV_IMAGE_REPO:-itv}-aggregator:${ITV_IMAGE_TAG:-local}   # CI: ghcr.io/bsantoshraj/itv-aggregator:<sha>
     profiles: [jobs]
     depends_on: [limesurvey]
     environment:
@@ -195,7 +195,7 @@ services:
     build:
       context: .
       dockerfile: aggregator/Dockerfile
-    image: itv-aggregator:local
+    image: ${ITV_IMAGE_REPO:-itv}-aggregator:${ITV_IMAGE_TAG:-local}   # CI: ghcr.io/bsantoshraj/itv-aggregator:<sha>
     depends_on: [limesurvey]
     entrypoint: ["sh", "-c", "while true; do python -m itv_aggregator; sleep 300; done"]
     environment:

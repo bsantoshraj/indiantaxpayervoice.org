@@ -54,7 +54,7 @@ sudo ./infra/staging/setup-host-db.sh >/dev/null
 
 echo "Recreating containers (LimeSurvey regenerates config.php and security.php)…"
 docker compose up -d --force-recreate --quiet-pull 2>&1 | grep -vE 'Container .* (Recreate|Recreated|Starting|Started|Running|Waiting|Healthy)' || true
-for _ in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8081/index.php/admin/authentication/sa/login && break; sleep 5; done
+for _ in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:8081/ && break; sleep 5; done
 
 echo "Updating LimeSurvey account passwords and ending all sessions…"
 hash() { docker compose exec -T limesurvey php -r 'echo password_hash(stream_get_contents(STDIN), PASSWORD_DEFAULT);'; }

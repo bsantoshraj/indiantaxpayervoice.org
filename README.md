@@ -144,3 +144,32 @@ The admin is served only on its own hostname, `survey-admin-staging.indiantaxpay
 - The staging deploy writes `SURVEY_ADMIN_HOST` and `ITV_ACCESS_*` (not secret) into
   `/opt/itv/.env` from the Cloudflare Terraform outputs. To add an administrator,
   extend `survey_admin_emails` and re-run `terraform apply` and the deploy.
+
+## CI/CD (GitHub Actions)
+
+`.github/workflows/ci.yml`:
+
+- **Every PR:** aggregator and gate tests, shellcheck, Terraform fmt/validate, compose
+  config and `nginx -t`; both images are built (not pushed).
+- **Merge to `main`:** the gate and aggregator images are built once and pushed to
+  `ghcr.io/bsantoshraj/itv-{gate,aggregator}:<commit sha>`, then deployed to staging:
+  code is synced, the droplet pulls those images (it never builds), the staging CDN
+  cache is purged, and `scripts/smoke-staging.sh` runs.
+- **Rollback:** Actions → CI → Run workflow with an earlier `main` commit SHA.
+- **Not in CI:** `terraform apply` (state lives on the admin machine), the backup
+  restore test (needs the backup key) and the full survey e2e test.
+
+The CI deploy key is restricted on the droplet to syncing into `/opt/itv` and
+`deploy <sha>` (`infra/staging/ci-ssh-command.sh`, installed to `/usr/local/bin`); its
+public half is kept at `~/.config/itv/ci-deploy-key.pub` (not in the repo) and installed
+by `scripts/sync-staging-keys.sh`. Registry access uses each run's short-lived
+`GITHUB_TOKEN`; no registry credential is stored on the droplet.
+
+| GitHub setting | Kind | Value |
+|---|---|---|
+| `STAGING_SSH_KEY` | secret | CI deploy private key |
+| `CF_PURGE_TOKEN` | secret | Cloudflare token with Zone > Cache Purge only |
+| `STAGING_HOST`, `STAGING_SSH_KNOWN_HOSTS`, `CF_ZONE_ID` | variables | droplet IP, its pinned host keys, zone ID |
+
+`scripts/deploy-staging.sh` remains as a manual fallback (builds images on the droplet).
+Dependabot (`.github/dependabot.yml`) opens weekly update PRs.
