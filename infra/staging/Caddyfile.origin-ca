@@ -17,15 +17,27 @@
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
-		X-Robots-Tag "noindex, nofollow"   # staging must not be indexed
 		-Server
 	}
 	encode zstd gzip
 	tls /etc/caddy/origin-tls/origin.pem /etc/caddy/origin-tls/origin.key
 }
 
+# Search engines: only the production website is indexable. The survey, admin
+# and statistics hosts are never indexed; staging is never indexed at all.
+(noindex) {
+	header X-Robots-Tag "noindex, nofollow"
+}
+(robots_staging) {
+	import noindex
+}
+(robots_production) {
+	header -X-Robots-Tag
+}
+
 {$WP_HOST} {
 	import security
+	import robots_{$ITV_ENV}
 	# WordPress admin and login: Cloudflare Access at the edge, token re-verified
 	# here by the gate (same check as the LimeSurvey admin).
 	@wpadmin path /wp-admin /wp-admin/* /wp-login.php
@@ -38,8 +50,17 @@
 	}
 }
 
+# www.<website> -> https://<website> (permanent). Only production has a www DNS
+# record; on staging this block is never reached.
+www.{$WP_HOST} {
+	import security
+	import noindex
+	redir https://{$WP_HOST}{uri} permanent
+}
+
 {$SURVEY_HOST} {
 	import security
+	import noindex
 	reverse_proxy survey-proxy:8080 {
 		# Visitor IP as resolved via trusted_proxies (Cloudflare), for rate limits.
 		header_up X-Real-IP {client_ip}
@@ -49,6 +70,7 @@
 # LimeSurvey admin: Cloudflare Access at the edge, token re-verified by the gate.
 {$SURVEY_ADMIN_HOST} {
 	import security
+	import noindex
 	reverse_proxy survey-proxy:8090 {
 		header_up X-Real-IP {client_ip}
 	}
@@ -56,6 +78,7 @@
 
 {$STATS_HOST} {
 	import security
+	import noindex
 	reverse_proxy stats:8080 {
 		# Visitor IP as resolved via trusted_proxies (Cloudflare), for rate limits.
 		header_up X-Real-IP {client_ip}

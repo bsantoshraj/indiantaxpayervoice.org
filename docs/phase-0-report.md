@@ -273,11 +273,13 @@ The DB and LB do not autoscale on DigitalOcean; plan resizes ahead of announced 
 - **Acceptance:** no public file contains IDs, timestamps finer than a week, or free text (tested); suppression and rounding verified on synthetic data in staging; the map and charts pass keyboard and screen-reader checks. Status: [Phase 2 report](phase-2-report.md).
 
 ### Production rollout (owner request, 2026-10-24)
-- [ ] QA on staging (test suites, smoke tests, restore test, responsive check against staging)
-- [ ] Production droplet and firewall (Terraform), same layout as staging
-- [ ] Cloudflare for production hosts without the staging prefix: DNS, Access, WAF, rate limiting, cache rules, `www` → apex redirect
-- [ ] CI/CD promotion: the images that passed staging are pulled from GHCR (no rebuild), deployed after owner approval
-- [ ] Production `.env`, backups, restore test and smoke tests
+- [x] QA on staging: test suites, smoke tests, restore test PASS, responsive check 98/98 against staging
+- [x] Production droplet `itv-prod-1` and firewall from the shared Terraform module (`infra/terraform/modules/droplet`)
+- [x] Cloudflare for production hosts (one `environments` map): DNS, Access, WAF, rate limiting, cache rules; `www` → apex redirect at the origin
+- [x] CI/CD promotion job: the images that passed staging are pulled from GHCR (no rebuild), deployed after owner approval
+- [x] Production `.env` generated on the droplet; first deploy with the GHCR images of `afb7437`; smoke tests
+- [ ] Survey opened by controlled release (`ITV_SURVEY_OPEN` in `infra/env/production.env`; owner decision, 2026-10-24)
+- [ ] Production backups pulled to the admin machine; restore test on production
 - Open before real respondents are invited: legal review, privacy review (Phase 2), a methodologist's review; monitoring and alerting deferred by owner decision
 
 ### Phase 3 — Elasticity and resilience

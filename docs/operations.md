@@ -1,8 +1,10 @@
-# Operating staging
+# Operating staging and production
 
-Staging is one DigitalOcean droplet (Premium AMD 2 GB, `blr1`, `itv-staging-1`)
-behind Cloudflare. It holds no real data. Production does not exist yet; it will
-reuse this layout with managed databases (see the [Phase 0 report](phase-0-report.md)).
+Staging (`itv-staging-1`, 134.209.157.144) and production (`itv-prod-1`, 64.227.176.80)
+are each one DigitalOcean droplet (Premium AMD 2 GB, `blr1`) behind Cloudflare, built
+from the same Terraform module. Staging holds test data only. Every difference is in
+[environments.md](environments.md). Manual deploys: `scripts/deploy.sh <env>`; smoke
+tests: `scripts/smoke.sh <env>`; key sync: `scripts/sync-staging-keys.sh <env>`.
 
 ## Admin machine
 

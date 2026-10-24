@@ -16,7 +16,7 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 
 | # | Item | What is needed |
 |---|---|---|
-| 4 | **Search Console** | Create a *Domain* property for `indiantaxpayervoice.org` and send the `google-site-verification=…` value; it is added as a DNS record through Terraform |
+| 4 | **Search Console** | A `google-site-verification` TXT record is already on the domain. In Search Console, click **Verify** for the *Domain* property, then submit `https://indiantaxpayervoice.org/wp-sitemap.xml` |
 | 5 | **Cloudflare Web Analytics** | Add *Account › Account Web Analytics › Edit* to the existing Cloudflare token (its value does not change) |
 | 6 | **Backup private key** | Keep an offline copy of `~/.config/itv/backup-age.key` (for example in a password manager); without it, backups are unreadable |
 | 7 | **Old credential files** | `~/do_token`, `~/ghcr_token` and `~/do_staging.json` are readable by every user on the admin machine: `chmod 600` them or delete them |
@@ -38,6 +38,13 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 |---|---|
 | 14 | Merge approvals for open pull requests (the pipeline deploys `main` to staging) |
 | 15 | Dependabot updates: #7 DigitalOcean provider, #8 nginx 1.31, #10 altcha 2.3 (small); #9 MariaDB 11.8 → 13.0 (major; needs a migration test first) |
+
+## Production
+
+| # | Item | What is needed |
+|---|---|---|
+| 16 | **Open the survey (controlled release)** | When ready: a pull request setting `ITV_SURVEY_OPEN=1` in `infra/env/production.env`, then approve the production deployment ([environments.md](environments.md#opening-the-production-survey-controlled-release)) |
+| 17 | **Approve production deployments** | Each "Run workflow → production" waits for your approval in GitHub |
 
 ## Deferred by owner decision
 

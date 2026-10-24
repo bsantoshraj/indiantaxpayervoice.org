@@ -4,7 +4,7 @@
 # they are not the only control.
 
 locals {
-  public_survey_hosts = join(" ", [for h in var.public_survey_hosts : "\"${h}\""])
+  public_survey_hosts = local.quoted.public_survey
 }
 
 resource "cloudflare_ruleset" "managed_waf" {
