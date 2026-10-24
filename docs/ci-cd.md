@@ -49,8 +49,9 @@ workflows for PRs from outside contributors wait for the owner's approval.
    (GitHub environment `production`, required reviewer: the owner). Ignore or reject
    it to cancel.
 3. The job checks the commit is on `main` and that its gate and aggregator images
-   exist in GHCR, deploys exactly those images, purges the production cache and runs
-   the production smoke tests.
+   exist in GHCR, deploys exactly those images, purges the production cache, runs
+   the production smoke tests, and submits the page URLs to IndexNow (when
+   `INDEXNOW_ID` is set; a failed submission only warns).
 
 Only commits that were pushed to `main` have images, so production can only receive
 code that has already been deployed to staging.

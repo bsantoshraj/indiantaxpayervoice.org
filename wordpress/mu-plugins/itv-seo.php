@@ -129,3 +129,45 @@ add_action(
 		);
 	}
 );
+
+/**
+ * [itv_share]: "Share on WhatsApp" as a plain wa.me link (no third-party script,
+ * nothing loaded from WhatsApp until tapped). The shared link carries UTM tags so
+ * analytics can tell WhatsApp visits apart.
+ */
+add_shortcode(
+	'itv_share',
+	function () {
+		$url  = add_query_arg(
+			array( 'utm_source' => 'whatsapp', 'utm_medium' => 'share', 'utm_campaign' => 'survey' ),
+			home_url( '/participate/' )
+		);
+		$text = sprintf(
+			/* translators: %s: link to the survey */
+			__( 'Indian taxpayers: what should we get in return for the taxes we pay? Job-loss protection, health costs, public services. A 5-minute anonymous survey, no name, PAN or Aadhaar: %s', 'itv' ),
+			$url
+		);
+		$icon = '<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.6.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.7-1.2.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.7.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.2-.5-.3Z"/></svg>';
+		return '<p class="itv-share"><a class="itv-share__whatsapp" href="' . esc_url( 'https://wa.me/?text=' . rawurlencode( $text ) ) . '" target="_blank" rel="noopener noreferrer">'
+			. $icon . '<span>' . esc_html__( 'Share on WhatsApp', 'itv' ) . '</span><span class="itv-sr-only"> ' . esc_html__( '(opens WhatsApp)', 'itv' ) . '</span></a></p>';
+	}
+);
+
+/**
+ * IndexNow: serve the verification file /<id>.txt so search engines accept URL
+ * submissions from scripts/indexnow.sh (production only). The id is public by
+ * design but kept out of the repository; set ITV_INDEXNOW_ID in .env.
+ */
+add_action(
+	'init',
+	function () {
+		$id = defined( 'ITV_INDEXNOW_ID' ) ? ITV_INDEXNOW_ID : '';
+		if ( preg_match( '/^[a-f0-9]{32}$/', $id ) && wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) === '/' . $id . '.txt' ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			header( 'Content-Type: text/plain; charset=utf-8' );
+			header( 'Cache-Control: public, max-age=86400' );
+			echo $id; // phpcs:ignore WordPress.Security.EscapeOutput -- validated hex
+			exit;
+		}
+	},
+	0
+);

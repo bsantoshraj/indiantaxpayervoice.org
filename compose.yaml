@@ -48,10 +48,13 @@ services:
       WORDPRESS_DB_USER: ${WP_DB_USER}
       WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
       ITV_CF_BEACON_TOKEN: ${ITV_CF_BEACON_TOKEN:-}
+      ITV_INDEXNOW_ID: ${ITV_INDEXNOW_ID:-}
       WORDPRESS_CONFIG_EXTRA: |
         define('DISALLOW_FILE_EDIT', true);
         // Cloudflare Web Analytics beacon token (public; empty = no analytics).
         define('ITV_CF_BEACON_TOKEN', getenv('ITV_CF_BEACON_TOKEN') ?: '');
+        // IndexNow verification id (public; empty = no verification file).
+        define('ITV_INDEXNOW_ID', getenv('ITV_INDEXNOW_ID') ?: '');
         // Behind the HTTPS proxy (staging/production); WordPress is not reachable directly.
         if (($$_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') { $$_SERVER['HTTPS'] = 'on'; }
         define('WP_AUTO_UPDATE_CORE', 'minor');

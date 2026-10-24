@@ -17,6 +17,7 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 | # | Item | What is needed |
 |---|---|---|
 | 4 | **Search Console** | A `google-site-verification` TXT record is already on the domain. In Search Console, click **Verify** for the *Domain* property, then submit `https://indiantaxpayervoice.org/wp-sitemap.xml` |
+| 20 | **Bing Webmaster Tools** | At https://www.bing.com/webmasters, import the site from Google Search Console (after item 4). IndexNow submissions already run on every production deploy |
 | 5 | **Cloudflare Web Analytics** | Add *Account › Account Web Analytics › Edit* to the existing Cloudflare token (its value does not change) |
 | 6 | **Backup private key** | Keep an offline copy of `~/.config/itv/backup-age.key` (for example in a password manager); without it, backups are unreadable |
 | 7 | **Old credential files** | `~/do_token`, `~/ghcr_token` and `~/do_staging.json` are readable by every user on the admin machine: `chmod 600` them or delete them |

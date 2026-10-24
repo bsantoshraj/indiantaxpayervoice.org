@@ -96,6 +96,15 @@ LimeSurvey or a newsletter), add it to SPF first.
   Search Console, copy the `google-site-verification=…` TXT value, and add it as a TXT
   record (in `infra/terraform/cloudflare`), then verify and submit
   `https://indiantaxpayervoice.org/wp-sitemap.xml` once production exists.
+- **IndexNow** (Bing and other engines): after every production deploy CI runs
+  `scripts/indexnow.sh`, which submits the sitemap's page URLs. Engines verify the
+  submission against `https://indiantaxpayervoice.org/<id>.txt`, served by the SEO
+  plugin from `ITV_INDEXNOW_ID`. The id is public by design but kept out of the
+  repository: `~/.config/itv/indexnow-id`, production's `/opt/itv/.env`, and the
+  GitHub variable `INDEXNOW_ID`. Staging is never submitted.
+- **Sharing:** `[itv_share]` renders a "Share on WhatsApp" link (plain `wa.me` link,
+  no third-party script) on the home, participate and statistics pages. The shared
+  link carries `utm_source=whatsapp&utm_medium=share&utm_campaign=survey`.
 - **Cloudflare Web Analytics** (cookieless; website only, never the survey): set
   `ITV_CF_BEACON_TOKEN` in the droplet's `.env` to the site's beacon token. Creating the
   site via Terraform needs the token permission *Account › Account Web Analytics › Edit*.
