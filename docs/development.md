@@ -49,6 +49,11 @@ is overwritten by the next bootstrap. After editing a file:
 `docker compose run --rm wpcli bash /bootstrap.sh`. New pages also need an entry in
 the `pages` list in `bootstrap.sh`. The theme is `wordpress/themes/itv`.
 
+**Articles.** Articles live in `research/articles/` (exported from the drafts doc with
+`research/scripts/split_articles.py`). Load them into the local site as drafts with
+`research/scripts/wp_article.sh drafts`; preview them under wp-admin › Posts. The
+release flow to staging and production is in [ci-cd.md](ci-cd.md#publish-an-article-controlled-release).
+
 **Change the survey.** The questionnaire is `survey/questionnaire-v1.json`; the
 aggregator validates exports against it, so question and option codes must match
 LimeSurvey's. `survey/build_structure.py` builds the LimeSurvey import from it.

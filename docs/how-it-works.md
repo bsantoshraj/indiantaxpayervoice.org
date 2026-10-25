@@ -11,6 +11,7 @@ costs and threat model see the [Phase 0 report](phase-0-report.md).
 | Component | What it does | Software |
 |---|---|---|
 | **Website** | Public pages: mission, research, methodology, statistics, privacy, terms | WordPress 7.1 (block theme `itv`, must-use plugin `itv-stats`) |
+| **Articles** | Sourced research articles: drafts on staging, published on production only after review and approval | `research/articles/`, `research/scripts/wp_article.sh`, workflow "Publish or unpublish article" |
 | **Survey gate** | Bot check before anyone can open the survey; also verifies Cloudflare Access tokens for the admin | `gate/` (Python, ALTCHA proof-of-work, optional Cloudflare Turnstile) |
 | **Survey proxy** | Front door of the survey: asks the gate, rate-limits submissions, refuses admin routes on the public host | nginx 1.30 |
 | **Survey** | The questionnaire and its responses | LimeSurvey 7.5 (anonymised: no IP, no tokens, no dates) |
@@ -28,12 +29,13 @@ website only ever sees the published, already-aggregated statistics.
 
 | Role | Production | Staging | Cached by Cloudflare |
 |---|---|---|---|
-| Website | `indiantaxpayervoice.org` (`www.` redirects) | `staging.indiantaxpayervoice.org` | Pages 10 min (anonymous visitors only) |
+| Website | `indiantaxpayervoice.org` (`www.` redirects) | `staging.indiantaxpayervoice.org` (private) | Pages 10 min (anonymous visitors only) |
 | Survey (behind the gate) | `survey.indiantaxpayervoice.org` | `survey-staging.indiantaxpayervoice.org` | Never |
 | LimeSurvey admin (Cloudflare Access) | `survey-admin.indiantaxpayervoice.org` | `survey-admin-staging.indiantaxpayervoice.org` | Never |
 | Public statistics | `stats.indiantaxpayervoice.org` | `stats-staging.indiantaxpayervoice.org` | As the origin says (5 min); refreshed hourly |
 
-All are proxied by Cloudflare (SSL mode Full (strict)). Each droplet's firewall
+Every staging host is private: Cloudflare Access (admins' email code, or CI's service
+token). All are proxied by Cloudflare (SSL mode Full (strict)). Each droplet's firewall
 accepts HTTPS only from Cloudflare's address ranges, so none of these can be reached
 by IP. Only the production website is indexed by search engines; every other host
 sends `noindex`. Differences between the environments: [environments.md](environments.md).

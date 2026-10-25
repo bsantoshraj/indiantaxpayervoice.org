@@ -65,6 +65,10 @@ the Bot Fight Mode setting (off).
 - **WordPress admin** (`/wp-admin`, `/wp-login.php`) is behind Cloudflare Access with
   the same policy as the LimeSurvey admin; Caddy re-checks the token (`forward_auth`
   to the gate). `ITV_ACCESS_AUD` lists both applications.
+- **Staging is private.** Every staging host (website, survey, statistics) is behind
+  Cloudflare Access: admins sign in with the email code; CI's smoke tests present a
+  service token (`STAGING_ACCESS_CLIENT_ID` / `_SECRET` in GitHub). The admin
+  applications do not accept that token (403). Production stays public.
 - **Email address obfuscation** is off (Terraform), so addresses are shown as written,
   including to visitors without JavaScript.
 
@@ -108,6 +112,22 @@ LimeSurvey or a newsletter), add it to SPF first.
 - **Cloudflare Web Analytics** (cookieless; website only, never the survey): set
   `ITV_CF_BEACON_TOKEN` in the droplet's `.env` to the site's beacon token. Creating the
   site via Terraform needs the token permission *Account › Account Web Analytics › Edit*.
+
+## Renew the CI Access token for staging
+
+The service token CI uses to reach private staging is valid for a year (created
+2026-10-25). Renew it before it expires, or the staging smoke tests fail:
+
+```bash
+export CLOUDFLARE_API_TOKEN="$(cat ~/.config/itv/cf_token)"
+terraform -chdir=infra/terraform/cloudflare plan -replace='cloudflare_zero_trust_access_service_token.ci["staging"]' -out=renew.tfplan
+terraform -chdir=infra/terraform/cloudflare apply renew.tfplan
+# Into GitHub without printing it:
+terraform -chdir=infra/terraform/cloudflare output -json ci_access_tokens | python3 -c 'import json,sys; print(json.load(sys.stdin)["staging"]["client_id"], end="")' | gh secret set STAGING_ACCESS_CLIENT_ID
+terraform -chdir=infra/terraform/cloudflare output -json ci_access_tokens | python3 -c 'import json,sys; print(json.load(sys.stdin)["staging"]["client_secret"], end="")' | gh secret set STAGING_ACCESS_CLIENT_SECRET
+```
+
+The Cloudflare token needs *Account › Access: Service Tokens › Edit* (added 2026-10-25).
 
 ## Backups and restore
 
