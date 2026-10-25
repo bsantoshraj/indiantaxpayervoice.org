@@ -2,7 +2,7 @@
 
 Oct 24, 2026 · @santosh
 
-Thirteen short, sourced articles on questions Indian taxpayers search for, each with ready-to-post versions for LinkedIn, X and WhatsApp that point to the survey. Every figure links to the page it came from; check the numbers once more before posting, because official data is revised.
+Fourteen short, sourced articles on questions Indian taxpayers search for, each with ready-to-post versions for LinkedIn, X and WhatsApp that point to the survey. Every figure links to the page it came from; check the numbers once more before posting, because official data is revised.
 
 ## How to use these drafts
 
