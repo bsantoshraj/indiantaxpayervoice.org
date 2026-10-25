@@ -1,0 +1,5 @@
+limit,set_july_2014_inr,today_old_regime_inr,if_indexed_inr,real_value_today_inr
+Income exempt from tax (under 60),250000,250000,404000.0,155000.0
+Income exempt from tax (senior citizens),300000,300000,485000.0,186000.0
+"Section 80C investments (PPF, EPF, ELSS, life cover…)",150000,150000,242000.0,93000.0
+"Home-loan interest, self-occupied house",200000,200000,323000.0,124000.0

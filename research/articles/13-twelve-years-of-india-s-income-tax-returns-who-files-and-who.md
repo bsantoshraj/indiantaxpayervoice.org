@@ -24,6 +24,23 @@ Prices rose 87% over these years (consumer price index \[4\]), but the rupee lin
 
 The salary at which the top 1% of salaried filers begins rose from about ₹37 lakh to ₹61 lakh in rupees of the time. Adjusted for inflation it fell, from about ₹69 lakh (in 2022-23 rupees) to ₹61 lakh: the top of the salaried ladder has not outrun prices \[1\]\[2\]\[4\].
 
+### Fiscal drag: the limits that did not move
+
+When a tax limit is fixed in rupees and prices rise, the limit buys less every year, so people pay more tax without any law changing. Economists call this *fiscal drag* or *bracket creep*.
+
+Four limits for the old tax regime were set in the Budget of 10 July 2014 \[5\] and are still the same today \[6\]. Prices rose 62% between 2014-15 and 2024-25 \[4\]:
+
+| Limit (old regime) | Set in July 2014, still today | If it had followed prices | What it is worth today, in 2014 rupees |
+| --- | --- | --- | --- |
+| Income exempt from tax (under 60) | ₹2.5 lakh | ₹4.04 lakh | ₹1.55 lakh |
+| Income exempt from tax (senior citizens) | ₹3 lakh | ₹4.85 lakh | ₹1.86 lakh |
+| Section 80C investments (PPF, EPF, ELSS, life cover) | ₹1.5 lakh | ₹2.42 lakh | ₹0.93 lakh |
+| Home-loan interest, self-occupied house | ₹2 lakh | ₹3.23 lakh | ₹1.24 lakh |
+
+The new regime's tax-free slab, ₹4 lakh since 2025-26 \[6\], is close to where the 2014 exemption would be if it had followed prices. People who stay in the old regime to claim 80C or home-loan interest still work with limits worth about 38% less than when they were set.
+
+India's income tax law does not adjust any of these limits for inflation; they change only when a Budget changes them. Whether they should follow prices automatically is a policy choice.
+
 ### Year by year
 
 | AY | Individual returns | No tax payable | Returns paying ₹10 lakh+ tax | Their share of all tax | Salaried filers | Salaried ₹50 lakh+ |
@@ -69,3 +86,5 @@ The salary at which the top 1% of salaried filers begins rose from about ₹37 l
 2. Central Board of Direct Taxes. *Income Tax Return Statistics*, Assessment Years 2022-23 and 2023-24, tables 2.2 and 2.11. Evidence: `research/sources/a11-cbdt-itr-stats-ay2022-23.pdf` (SHA-256 31dfd5c2185ecd0f…), `research/sources/a11-cbdt-itr-stats-ay2023-24.pdf` (SHA-256 eeb7c53d4cd62a71…). All twelve years extracted by `research/scripts/cbdt_tables.py` (each table checked against its printed total) and combined by `research/scripts/analyse_timeseries.py` into `research/data/timeseries.csv`.
 3. Alt News. *No, the govt has not exempted tax up to Rs 5 lakh income; no change in tax slabs*. 1 Feb 2019. https://www.altnews.in/no-the-govt-has-not-exempted-tax-up-to-rs-5-lakh-income-no-change-in-tax-slabs/ (evidence: local copy, SHA-256 d61bf22c8574d33a…)
 4. World Bank. *Consumer price index (2010 = 100), India*, indicator FP.CPI.TOTL, World Development Indicators (accessed 25 Oct 2026). https://data.worldbank.org/indicator/FP.CPI.TOTL?locations=IN Evidence: `research/sources/a13-worldbank-cpi-india.json`, SHA-256 5015c8485d3a6290…
+5. Ministry of Finance. *Budget Speech 2014-15*, 10 July 2014, paragraphs 192 (exemption limit ₹2 lakh to ₹2.5 lakh; senior citizens ₹2.5 lakh to ₹3 lakh), 195 (section 80C ₹1 lakh to ₹1.5 lakh) and 196 (self-occupied home-loan interest ₹1.5 lakh to ₹2 lakh). https://www.indiabudget.gov.in/budget2014-2015/ub2014-15/bs/bs.pdf Evidence: research/sources/a13-mof-budget-speech-2014-15.pdf; calculation research/scripts/fiscal\_drag.py → research/data/fiscal-drag.csv.
+6. Income Tax Department, Government of India. *Salaried Individuals for AY 2026-27* (old regime: ₹2,50,000 and ₹3,00,000 nil slabs, 80C limit ₹1,50,000, self-occupied interest ₹2,00,000; new regime: ₹4,00,000 nil slab). https://www.incometax.gov.in/iec/foportal/help/individual/return-applicable-1 Evidence: research/sources/a07-itd-salaried-ay2026-27.html (SHA-256 c394823582f2d8dc…).
