@@ -20,6 +20,8 @@ the last column.
 | Databases | MariaDB containers | MariaDB on the host | MariaDB on the host | `COMPOSE_PROFILES` in `.env` |
 | HTTPS | none (plain HTTP; optional local TLS on :8443) | Cloudflare Full (strict) + Origin CA, Caddy | same as staging | `compose.staging.yaml`, `infra/staging/Caddyfile.origin-ca` |
 | Admin access | open locally | Cloudflare Access (email code), re-verified at the origin | same as staging | `infra/terraform/cloudflare/access.tf` |
+| Public access | open locally | **private**: every staging host needs Cloudflare Access (email code); CI uses a service token | public | `infra/terraform/cloudflare/access.tf` (`private` in `environments`) |
+| Articles | drafts via `wp_article.sh` | every article as a draft, refreshed on each deploy; publishing here is the review step (changed text goes back to draft) | only articles published on staging with the same text, via the approved "Publish article" workflow | `research/articles/`, `docs/ci-cd.md` |
 | WAF, rate limiting, cache rules | none | Cloudflare (zone-wide rules include its hosts) | same as staging | `infra/terraform/cloudflare/{waf,main}.tf` |
 | Images | built locally | built by CI on every merge to `main` | **promoted**: the same images staging ran, never rebuilt | `.github/workflows/ci.yml` |
 | Deploys | `docker compose up -d` | automatic on merge to `main` | manual "Run workflow" → owner approval (GitHub environment `production`) | `.github/workflows/ci.yml` |

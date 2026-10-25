@@ -1,0 +1,11 @@
+{
+  "_about": "Charts placed in the website version of each article: article number -> {section heading start: chart file}. Used by research/scripts/article_to_wp.py.",
+  "11": {
+    "Who pays": "research/charts/a11-who-pays.svg",
+    "Who got how much relief": "research/charts/a11-relief.svg",
+    "The cliff": "research/charts/a11-cliff.svg"
+  },
+  "12": {
+    "A worked example": "research/charts/a12-relief.svg"
+  }
+}

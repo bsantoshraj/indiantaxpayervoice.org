@@ -36,6 +36,18 @@ add_action(
 	1
 );
 
+// Articles are published by the organisation, not by an account: everywhere a
+// visitor sees an author (templates, feeds), show the organisation's name so
+// the admin login name never appears. Admin screens keep the real account.
+foreach ( array( 'the_author', 'get_the_author_display_name' ) as $itv_author_hook ) {
+	add_filter(
+		$itv_author_hook,
+		function ( $name ) {
+			return is_admin() ? $name : 'Indian Taxpayer Voice';
+		}
+	);
+}
+
 // No author name in oEmbed responses, and no version number anywhere.
 add_filter(
 	'oembed_response_data',

@@ -105,4 +105,9 @@ if (( survey_replaced )); then
   docker compose run --rm aggregator --allow-drop 2>&1 | grep -E "INFO rows|ERROR" | sed 's/.*INFO //' || true
 fi
 docker compose run --rm wpcli bash /bootstrap.sh | tail -1
+# Staging always holds every article from the repository as a draft (or with the
+# status set in wp-admin); production gets articles only via the Publish workflow.
+if [[ "${ITV_ENV:-}" == staging ]]; then
+  research/scripts/wp_article.sh drafts | sed 's/^/article: /'
+fi
 docker compose ps --format '{{.Service}}: {{.Status}}'

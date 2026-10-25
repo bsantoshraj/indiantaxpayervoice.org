@@ -122,7 +122,9 @@ its own backups.
 # Restore test (monthly, and after any database or backup change)
 IP=134.209.157.144   # staging; production: 64.227.176.80
 ssh deploy@$IP 'sudo /opt/itv/infra/staging/restore-test.sh /dev/stdin' < ~/.config/itv/backup-age.key
-# Copy backups here now (cron does this daily; production into ~/itv-backups/production)
+# Copy backups here now. Daily copies run from anacron on the admin machine
+# (~/.anacron/anacrontab, triggered hourly and at boot by the user crontab): each pull
+# runs once a day, after 08:00 IST, at the first check after the machine is awake.
 scripts/pull-staging-backups.sh $IP [~/itv-backups/production]
 ```
 

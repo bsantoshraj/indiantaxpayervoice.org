@@ -74,6 +74,48 @@ rounding, minimum group size). Every deploy writes them into that droplet's `.en
 only `ITV_*` names that do not look like secrets (`SECRET`, `PASSWORD`, `TOKEN`, `KEY`)
 are accepted, otherwise the deploy fails. Secrets never go in the repository.
 
+### Publish an article (controlled release)
+
+Articles live in `research/articles/` (one Markdown file each, with their evidence in
+`research/`). Production publishes **only the exact text that was reviewed and
+published on staging**, and only with the owner's approval:
+
+```text
+ 1. Write / correct    drafts doc ──export──▶ split_articles.py ──▶ research/articles/NN-*.md
+ 2. Review the change  PR to main (text, sources, charts, evidence files)
+ 3. Merge              CI deploys staging; staging syncs every article from the
+                       repository as a draft, with a fingerprint (SHA-256) of its text
+ 4. Proofread          staging wp-admin ▶ Posts ▶ Drafts ▶ Preview (staging is private)
+ 5. Publish on staging the article becomes visible on the staging site; the relay
+                       (itv-publish-relay) starts "Publish article" for its slug
+ 6. Approve            GitHub asks the owner to approve (environment "production")
+ 7. Checks             the workflow converts the article from main and stops unless
+                       staging shows it PUBLISHED with the SAME fingerprint
+ 8. Live               production receives the article, the CDN is purged, the URL is
+                       checked (200) and search engines are notified (IndexNow)
+```
+
+- **Changed text needs a new review.** When a merge changes an article that is
+  already published on staging, the next staging sync puts it **back to draft**.
+  Publish it on staging again after reviewing, and step 7 will match.
+- **No code deploy is needed**: the workflow carries the article to production; the
+  production key's `publish` action accepts only the article named in the command.
+- **Corrections** follow the same path; re-publishing updates the live article (record
+  the correction in the article, as the research page promises).
+- **The repository is the source of truth.** Text typed in wp-admin is replaced on the
+  next sync; edit the drafts doc instead.
+- **Charts** come from `research/charts/manifest.json` (article number → section heading
+  → SVG). Regenerate them with the chart scripts and commit the SVGs.
+- **By hand:** Actions ▶ Publish article ▶ Run workflow (slug = the post's slug on
+  staging); the same checks apply. Locally: `research/scripts/wp_article.sh drafts`,
+  `… publish <slug>` (local site only), `… status <slug>`, `… fingerprint <slug>`.
+
+One-time setup for step 5 (the relay): create a fine-grained GitHub token for this
+repository only, with **Actions: read and write** and no other permission, and add it
+to the staging `.env` as `ITV_PUBLISH_DISPATCH_TOKEN` (never in git). It can only
+start workflows; production still waits for the owner's approval and the checks.
+Without the token the relay is off and you run step 5's workflow by hand.
+
 ### Roll back
 - **Staging:** Run workflow, environment `staging`, and the full SHA of an earlier
   `main` commit (`git log --format=%H`). Tests and lint run on the current `main`;
@@ -148,10 +190,14 @@ DNS), so recreated containers with new IPs are picked up without a restart.
 | `CF_PURGE_TOKEN` | repository secret | Cloudflare token for cache purge |
 | `CF_ZONE_ID` | repository variable | Lets the purge token work without zone read access |
 | `GITHUB_TOKEN` | built in | Pushes images; passed to the droplet for one pull per deploy |
+| `STAGING_ACCESS_CLIENT_ID`, `STAGING_ACCESS_CLIENT_SECRET` | repository secrets | Cloudflare Access service token: staging is private, so the staging smoke tests present it (from `terraform output ci_access_tokens`) |
+| `ITV_PUBLISH_DISPATCH_TOKEN` | staging `.env` only (not GitHub) | Fine-grained token, Actions read/write on this repository only: lets staging's Publish start the "Publish article" workflow |
 
 **What CI can do on a droplet.** Each environment has its own CI key, installed with
 `command="/usr/local/bin/itv-ci-ssh-command",restrict`: it can only rsync into
-`/opt/itv` (`rrsync`) and run `deploy <40-hex sha>`. Shells, PTYs, port forwarding and
+`/opt/itv` (`rrsync`), run `deploy <40-hex sha>`, run `publish <article slug>` (with
+that article on stdin; it refuses any other article) and `status <article slug>`
+(read-only). Slugs must be lowercase letters, digits and hyphens. Shells, PTYs, port forwarding and
 paths outside `/opt/itv` are refused (tested on both droplets). The forced command
 lives outside `/opt/itv`, so a code sync cannot replace it. This limits the keys to
 the deploy path; it does not make a compromised CI harmless, because deploying code
