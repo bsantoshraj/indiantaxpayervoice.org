@@ -8,7 +8,7 @@
 
 **What it means for you.** If your employer's group cover shrinks or you leave the job, you buy your own policy at prices that rise every year, and the rises bite hardest in old age. In January 2025 the regulator, IRDAI, told insurers not to raise premiums on individual health policies for people above 60 by more than 10% a year without consulting it first \[3\]. That cap protects seniors, but 10% a year still doubles a premium in about seven years.
 
-> Owner check: the Aon and Milliman figures measure employer plan costs, not retail premiums. Don't describe them as "premiums rose 11.5%". Link the IRDAI circular itself (irdai.gov.in) once you have opened it.
+> Owner check: the Aon and Milliman figures measure employer plan costs, not retail premiums. Don't describe them as "premiums rose 11.5%". The IRDAI cap is verified against the circular itself \[4\].
 
 **LinkedIn**
 
@@ -33,5 +33,5 @@
 1. Aon. *India outpaces global average with 2026 medical trend at 11.5 percent, Aon reports* (2026 Global Medical Trend Rates Report). Mumbai, 11 Dec 2025. https://www.aon.com/apac/in-the-press/asia-newsroom/2025/india-outpaces-global-average-with-2026-medical-trend-at-11-5-percent-aon-reports
 2. Buckle J, Aggarwal R, Arora H. *Measuring medical inflation in India*. Milliman, 8 Apr 2026. https://www.milliman.com/en-GB/insight/measuring-medical-inflation-in-india
 3. Minhas G. *IRDAI caps increase in insurance premiums for senior citizens at 10%*. Governance Now, 31 Jan 2025. https://www.governancenow.com/news/regular-story/irdai-caps-increase-in-insurance-premiums-for-senior-citizens-at-10
-4. Insurance Regulatory and Development Authority of India. *Circulars* (primary source for ref 3). https://irdai.gov.in/
+4. Insurance Regulatory and Development Authority of India. *Review of revision in premium rates under health insurance policies for senior citizens*, circular IRDAI/HLT/CIR/MISC/27/1/2025, 30 Jan 2025: "The insurers shall not revise the premium for senior citizens by more than 10% per annum"; prior consultation with IRDAI for a larger increase or a withdrawal. Listed at https://irdai.gov.in/circulars (retrieved from the Internet Archive; a scanned PDF). Evidence: `research/sources/a06-irdai-senior-premium-circular-2025.pdf`, SHA-256 b125c04a254ac67e…
 

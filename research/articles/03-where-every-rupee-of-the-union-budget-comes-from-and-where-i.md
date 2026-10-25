@@ -11,9 +11,9 @@ These are the Union Budget 2026-27 figures, from the Budget documents as reporte
 | Borrowings and other liabilities | 24 |
 | Income tax | 21 |
 | Corporation tax | 18 |
-| GST | 15 |
+| GST & other taxes | 15 |
 | Non-tax revenue | 10 |
-| Excise duty | 6 |
+| Union excise duties | 6 |
 | Customs | 4 |
 | Non-debt capital receipts | 2 |
 
@@ -28,12 +28,12 @@ These are the Union Budget 2026-27 figures, from the Budget documents as reporte
 | Centrally sponsored schemes | 8 |
 | Finance Commission and other transfers | 7 |
 | Other expenditure | 7 |
-| Subsidies | 6 |
-| Pensions | 2 |
+| Major subsidies | 6 |
+| Civil pensions | 2 |
 
 **What stands out.** Taxes fund 64 paise of each rupee; almost a quarter is borrowed. Interest on earlier borrowing (20 paise) costs nearly twice defence (11 paise). Health and education aren't separate lines here: most of that spending sits inside the scheme lines and with the states, which get 22 paise plus transfers.
 
-> Owner check: confirm against "Budget at a Glance" on [indiabudget.gov.in](https://www.indiabudget.gov.in/) (it blocks automated reading). These are Budget Estimates, not actuals.
+> How to read this: these are Budget Estimates for 2026-27, not actual spending. Every figure is checked against the Ministry of Finance's *Budget at a Glance 2026-27* \[2\].
 
 **LinkedIn**
 
@@ -56,5 +56,5 @@ These are the Union Budget 2026-27 figures, from the Budget documents as reporte
 ### References
 
 1. Siasat Daily / PTI. *Taxes to bring in 64 paise of every rupee govt earns: Union Budget 2026*. 1 Feb 2026. https://www.siasat.com/taxes-to-bring-in-64-paise-of-every-rupee-govt-earns-union-budget-2026-3334946/
-2. Ministry of Finance. *Union Budget 2026-27: Budget at a Glance* (primary source, "Rupee comes from / Rupee goes to" chart). https://www.indiabudget.gov.in/
+2. Ministry of Finance. *Budget at a Glance 2026-27*, charts "Rupee Comes From" and "Rupee Goes To". 1 Feb 2026. https://www.indiabudget.gov.in/doc/Budget\_at\_Glance/budget\_at\_a\_glance.pdf Evidence: `research/sources/a03-mof-budget-at-a-glance-2026-27.pdf`, SHA-256 c64dde0951fa592b…
 

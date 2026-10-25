@@ -8,7 +8,7 @@
 
 **In context.** Total health spending in 2022-23 was ₹8,81,359 crore, about 3.4% of GDP or ₹6,373 per person (South First). Government spending was 1.48% of GDP (ThePrint). Part of the 2021-22 peak was Covid spending, so the drop is partly a return to normal. Either way, a family still meets more than two-fifths of the country's health bill directly.
 
-> Owner check: the 2022-23 figures come from press reports. Link the Ministry's NHA 2022-23 report (nhsrcindia.org / mohfw.gov.in) once you have opened it.
+> How to read this: every 2022-23 figure is checked against the official *National Health Accounts Estimates for India 2022-23* \[4\]. Government spending of 1.48% of GDP uses the new GDP series; on the old series it is 1.43%.
 
 **LinkedIn**
 
@@ -33,5 +33,5 @@
 1. Ministry of Health and Family Welfare, via PIB. *National Health Account (NHA) Estimates 2020-21 and 2021-22: A Comprehensive Overview*. 4 Oct 2024. https://static.pib.gov.in/WriteReadData/specificdocs/documents/2024/oct/doc2024104408201.pdf
 2. ThePrint. *As govt cut health spends post-Covid, Indians paid more out of pocket in 2022-23, reversing 10-yr trend*. 28 May 2026. https://theprint.in/health/as-govt-cut-health-spends-post-covid-indians-paid-more-out-of-pocket-in-2022-23-reversing-10-yr-trend/2943692/
 3. South First. *As public health spending fell in 2022-23, Indians paid 6.4% more from their own pockets*. May 2026. https://thesouthfirst.com/health/as-public-health-spending-fell-in-2022-23-indians-paid-6-4-more-from-their-own-pockets/
-4. National Health Systems Resource Centre. *National Health Accounts* (primary reports). https://nhsrcindia.org/
+4. NHA Technical Secretariat (NHSRC) and Ministry of Health and Family Welfare. *National Health Accounts Estimates for India 2022-23*. May 2026. https://nhsrcindia.org/sites/default/files/2026-05/NHA%202022-23%20Report.pdf Evidence: `research/sources/a04-nhsrc-nha-2022-23.pdf`, SHA-256 bc97eb0db3213c8e…
 
