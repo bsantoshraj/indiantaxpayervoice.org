@@ -37,7 +37,7 @@ The National Education Policy 2020 calls for public investment in education of a
 
 **Why it matters.** When public spending is low, families pay instead: private school fees, coaching and hospital bills. Taxpayers often pay twice, once through tax and again from their pocket.
 
-> Owner check: World Bank figures are revised as countries report. Re-pull from the links before posting. Link the NHP 2017 and NEP 2020 documents themselves (mohfw.gov.in, education.gov.in) once you have opened them; both block automated reading.
+> Owner check: World Bank figures are revised as countries report. Re-pull from the links before posting. The NHP 2017 and NEP 2020 targets are verified against the official documents (refs 3 and 6).
 
 **LinkedIn**
 
@@ -61,8 +61,8 @@ The National Education Policy 2020 calls for public investment in education of a
 
 1. World Bank. *Domestic general government health expenditure (% of GDP)*, indicator SH.XPD.GHED.GD.ZS, World Development Indicators. https://data.worldbank.org/indicator/SH.XPD.GHED.GD.ZS (accessed 24 Oct 2026).
 2. World Bank. *Government expenditure on education, total (% of GDP)*, indicator SE.XPD.TOTL.GD.ZS, World Development Indicators. https://data.worldbank.org/indicator/SE.XPD.TOTL.GD.ZS (accessed 24 Oct 2026).
-3. Shankar IAS Parliament. *National Health Policy 2017, Part II* (summarising the Ministry of Health and Family Welfare's National Health Policy 2017). https://www.shankariasparliament.com/current-affairs/national-health-policy-2017-part-ii
+3. Ministry of Health and Family Welfare. *National Health Policy 2017*, section 2.4.3.1: "Increase health expenditure by Government as a percentage of GDP from the existing 1.15% to 2.5 % by 2025." http://mohfw.gov.in/sites/default/files/9147562941489753121.pdf (official site blocks scripts; retrieved from the Internet Archive). Evidence: `research/sources/a08-mohfw-nhp-2017.pdf`, SHA-256 6577bec49112aec5…
 4. ThePrint. *As govt cut health spends post-Covid, Indians paid more out of pocket in 2022-23, reversing 10-yr trend*. 28 May 2026. https://theprint.in/health/as-govt-cut-health-spends-post-covid-indians-paid-more-out-of-pocket-in-2022-23-reversing-10-yr-trend/2943692/
 5. Bordoloi M, Pandey S. *A Missed Milestone: How India has been Unable to Boost Public Education Spending to 6% of GDP*. Accountability Initiative, 5 May 2022. https://accountabilityindia.in/?p=27925
-6. Ministry of Education. *National Education Policy 2020* (primary source for the 6% target). https://education.gov.in/sites/upload\_files/mhrd/files/nep\_2020.pdf
+6. Ministry of Education. *National Education Policy 2020* § 26.2: "The Centre and the States will work together to increase the public investment in Education sector to reach 6% of GDP at the earliest." https://www.education.gov.in/sites/upload\_files/mhrd/files/NEP\_Final\_English\_0.pdf (retrieved from the Internet Archive). Evidence: research/sources/a08-moe-nep-2020.pdf, SHA-256 7881d77506d3dd2c…
 

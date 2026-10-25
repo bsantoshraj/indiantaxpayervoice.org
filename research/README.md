@@ -12,7 +12,7 @@ and the articles themselves.
 | `sources/local/` | Copies of news and commercial pages. Gitignored: kept as evidence on the admin machine, not republished |
 | `sources/harvest-log.csv` | When each copy was taken, whether directly or from the Internet Archive, and its SHA-256 |
 | `SHA256SUMS` | Checksums of every copy, committed or local (`sha256sum -c SHA256SUMS` from this folder) |
-| `scripts/` | `harvest.sh` downloads the sources; `cbdt_tables.py` extracts CBDT tables to CSV; `analyse_ay2023_24.py` computes the Article 11 figures; `charts_article11.py` / `charts_article12.py` draw the charts; `split_articles.py` splits the drafts doc export into `articles/`; `article_to_wp.py` converts an article for WordPress and `wp_article.sh` puts articles into WordPress as drafts or publishes one (see docs/ci-cd.md, "Publish an article") |
+| `scripts/` | `harvest.sh` downloads the sources; `cbdt_tables.py` extracts CBDT tables to CSV; `analyse_ay2023_24.py` computes the Article 11 figures; `analyse_timeseries.py` combines every year (AY 2012-13 to 2023-24) into `data/timeseries.csv`; `charts_article11.py` / `charts_article12.py` / `charts_timeseries.py` draw the charts; `split_articles.py` splits the drafts doc export into `articles/`; `article_to_wp.py` converts an article for WordPress and `wp_article.sh` puts articles into WordPress as drafts or publishes one (see docs/ci-cd.md, "Publish an article") |
 | `charts/` | Generated SVG charts, embedded inline in the website version of each article; `manifest.json` says which section heading each goes under |
 | `data/` | Generated CSVs and `ay2023-24-summary.md`. Do not edit by hand; re-run the scripts |
 
@@ -20,9 +20,9 @@ and the articles themselves.
 
 ```sh
 research/scripts/harvest.sh            # keeps existing copies; delete one to capture it again
-for y in 2022-23 2023-24; do python3 -I research/scripts/cbdt_tables.py research/sources/a11-cbdt-itr-stats-ay$y.pdf; done
-python3 -I research/scripts/analyse_ay2023_24.py
-python3 -I research/scripts/charts_article11.py && python3 -I research/scripts/charts_article12.py
+for f in research/sources/a1[13]-cbdt-itr-stats-ay*.pdf; do python3 -I research/scripts/cbdt_tables.py "$f"; done
+python3 -I research/scripts/analyse_ay2023_24.py && python3 -I research/scripts/analyse_timeseries.py
+for c in charts_article11 charts_article12 charts_timeseries; do python3 -I research/scripts/$c.py; done
 ```
 
 Articles reach WordPress through `wp_article.sh`, run where the Compose stack is:
@@ -53,9 +53,14 @@ checked against its own printed total and the script stops if they differ.
   answer on sansad.in.
 - **incometaxindia.gov.in** refuses scripted downloads, so CBDT reports are
   taken from the Internet Archive; the checksums identify exactly which copy.
-  Older years (AY 2012-13 to 2021-22) are still to be captured: download them
-  in a browser and save them as `sources/a11-cbdt-itr-stats-ayYYYY-YY.pdf`, or
-  re-run `harvest.sh` once their archive copies are reachable. A mirror on
-  dit-live.taxmann.com was not used: its certificate had expired.
+  All twelve years (AY 2012-13 to 2023-24) are captured; for AY 2018-19 and
+  2021-22 the newest archive copy was not a PDF, so `harvest.sh` used the newest
+  good snapshot from the archive's index (recorded in `harvest-log.csv`). A mirror
+  on dit-live.taxmann.com was not used: its certificate had expired.
+- **Older CBDT reports** (AY 2012-13 to 2018-19) print amounts in whole crore,
+  so a table's rows can differ from its printed total by up to half a crore per
+  row; counts always match exactly. AY 2018-19 prints losses as `- 48,255`, and
+  AY 2012-13 to 2015-16 wrap one range label across two lines; `cbdt_tables.py`
+  handles all three. Every year uses the same 24 income ranges.
 - **CBDT house-property tables (2.3)** give one row for all losses, so the
   number of filers whose loss exceeds the Rs 2 lakh cap is not published there.

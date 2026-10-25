@@ -30,14 +30,15 @@ TABLES = {
     "2.11": "individual-tax-payable",
 }
 
-ROW = re.compile(r"^\s*(?P<label>(?:<|=|>).*?)\s{2,}(?P<n>[\d,]+|-)\s+(?P<sum>-?[\d,.]+|-)\s+(?P<avg>-?[\d,.]+|-)\s*$")
+ROW = re.compile(r"^\s*(?P<label>(?:<|=|>).*?)\s{2,}(?P<n>[\d,]+|-)\s+(?P<sum>-\s?[\d,.]+|[\d,.]+|-)\s+(?P<avg>-\s?[\d,.]+|[\d,.]+|-)\s*$")
 EMPTY_ROW = re.compile(r"^\s*(?P<label><0|=0)\s+(?P<n>[\d,]+|-)(\s+-)*\s*$")
 TOTAL = re.compile(r"^\s*Total\s+(?P<n>[\d,]+)\s+(?P<sum>[\d,.]+)\s*$")
 
 
 def number(text: str) -> float | None:
     """'1,23,456.78' -> 123456.78; '-64,071.91' (a loss) -> -64071.91; '-' (none) -> None."""
-    return None if text == "-" else float(text.replace(",", ""))
+    # AY 2018-19 prints losses with a space after the sign: '- 48,255'.
+    return None if text == "-" else float(text.replace(",", "").replace(" ", ""))
 
 
 def bounds(label: str) -> tuple[int | None, int | None]:
@@ -65,9 +66,20 @@ def parse(text: str, number_: str) -> tuple[str, list[dict]]:
             count = sum(r["returns"] or 0 for r in rows)
             amount = sum(r["sum_crore"] or 0 for r in rows)
             printed_n, printed_sum = number(total["n"]), number(total["sum"])
-            if count != printed_n or abs(amount - printed_sum) > 1:
+            # Older reports (AY 2012-13 to 2018-19) print amounts in whole crore, so the
+            # rounded rows can drift from the printed total by up to half a crore each.
+            # Counts are never rounded and must match exactly.
+            whole = "." not in total["sum"]
+            slack = 0.5 * sum(1 for r in rows if r["sum_crore"]) if whole else 1
+            if count != printed_n or abs(amount - printed_sum) > slack:
                 raise ValueError(f"{number_}: rows give {count:,} / {amount:,.2f}, "
                                  f"printed total {printed_n:,.0f} / {printed_sum:,.2f}")
+            # Older reports wrap one label (">100,00,00,000 and" / "<=500,00,00,000"):
+            # its upper bound is the next row's lower bound.
+            for r, nxt in zip(rows, rows[1:]):
+                if r["range"].endswith(" and") and r["upper_inr"] is None:
+                    r["upper_inr"] = nxt["lower_inr"]
+                    r["range"] += f" <={nxt['lower_inr']:,}"
             return title, rows
         row = ROW.match(line) or EMPTY_ROW.match(line)
         if row:
