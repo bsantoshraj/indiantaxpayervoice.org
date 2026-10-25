@@ -4,11 +4,11 @@
 
 **How big it is.** Gross GST collections rose 8.3% to about ₹22 lakh crore in 2025-26 \[1\]. In March 2026 alone they topped ₹2 lakh crore \[1\]. In the Union Budget, GST, excise and customs together bring in 25 paise of every rupee the Centre receives, more than income tax's 21 paise (see Article 3) \[2\]. States collect their own share of GST on top.
 
-**What changed in September 2025.** The GST Council, at its 56th meeting on 3 September 2025, replaced the 12% and 28% slabs with two main rates, 5% and 18%, plus a 40% rate for sin and luxury goods, from 22 September 2025 \[3\]. Everyday items such as shampoo, toothpaste and soap bars moved to 5%; UHT milk, paneer and notebooks became exempt; and individual health and life insurance policies were exempted from GST \[3\]. Tobacco rates were to be notified separately \[3\].
+**What changed in September 2025.** The GST Council, at its 56th meeting on 3 September 2025, replaced the 12% and 28% slabs with two main rates, 5% and 18%, plus a 40% rate for sin and luxury goods, from 22 September 2025 \[3\]. Everyday items such as shampoo, toothpaste and soap bars moved to 5%; UHT milk, pre-packaged and labelled paneer, and exercise books and notebooks became exempt; and individual health and life insurance policies were exempted from GST \[3\]. Tobacco rates were to be notified separately \[3\].
 
 **Why it matters.** GST is charged at the same rate whatever your income, so it takes a bigger share of a poorer household's budget. That makes everyone a taxpayer, including the many people who never file a return. The question of what taxpayers get back is not only for the salaried.
 
-> Owner check: link the CBIC rate notifications (cbic-gst.gov.in) and the GST Council press release once opened. The ₹22 lakh crore figure is gross, before refunds.
+> How to read this: the GST changes are checked against the GST Council's own press release and FAQ \[3\]\[4\]. The ₹22 lakh crore figure is gross, before refunds.
 
 **LinkedIn**
 
@@ -34,6 +34,6 @@
 
 1. All India Radio News. *GST collections rise 8.8% to over Rs 2 lakh cr in March*. 1 Apr 2026. https://www.newsonair.gov.in/gst-collections-rise-8-8-to-over-rs-2-lakh-cr-in-march/
 2. Siasat Daily / PTI. *Taxes to bring in 64 paise of every rupee govt earns: Union Budget 2026*. 1 Feb 2026. https://www.siasat.com/taxes-to-bring-in-64-paise-of-every-rupee-govt-earns-union-budget-2026-3334946/
-3. SCC Online Blog. *GST Council's 56th Meeting introduces key slab reforms and Tribunal rollout: new GST rates and FAQs*. 4 Sep 2025. https://www.scconline.com/blog/post/2025/09/04/gst-council-56th-meeting-slab-reforms-tribunal-rollouts-2025/
-4. Central Board of Indirect Taxes and Customs. *GST rate notifications* (primary source for ref 3). https://cbic-gst.gov.in/
+3. Ministry of Finance (PIB), published by the GST Council. *Recommendations of the 56th Meeting of the GST Council*. 3 Sep 2025 (two rates of 5% and 18% plus a 40% de-merit rate, from 22 September 2025; Annexures I–IV list the item-wise changes, e.g. Education: exercise books and notebooks 12% to Nil). https://gstcouncil.gov.in/sites/default/files/2025-09/press\_release\_press\_information\_bureau.pdf Evidence: `research/sources/a10-gstcouncil-56th-press-release.pdf`, SHA-256 2b596a6fcc583922…
+4. Ministry of Finance, published by the GST Council. *Frequently Asked Questions on the decisions of the 56th GST Council*. 3 Sep 2025 (paneer exempt only when pre-packaged and labelled; individual health and life insurance policies covered by the exemption; specified tobacco products later). https://gstcouncil.gov.in/sites/default/files/2025-09/faq.pdf Evidence: `research/sources/a10-gstcouncil-56th-faq.pdf`, SHA-256 99cd227a6de7606c…
 

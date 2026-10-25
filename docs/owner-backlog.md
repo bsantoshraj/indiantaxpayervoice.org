@@ -41,8 +41,7 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 | # | Item |
 |---|---|
 | 14 | Merge approvals for open pull requests (the pipeline deploys `main` to staging) |
-| 23 | **Article review before publishing**: each article's "Owner check" notes in the drafts doc; a tax professional's check of the tax tables in articles 7, 11 and 12 |
-| 24 | **Older CBDT return statistics (AY 2012-13 to 2021-22)** for the 10-year picture: incometaxindia.gov.in refuses scripted downloads. Download them in a browser into `research/sources/` as `a11-cbdt-itr-stats-ayYYYY-YY.pdf` ([research/README.md](../research/README.md)) |
+| 23 | **Article review before publishing**: a tax professional's check of the tax tables in articles 7, 11 and 12. Primary sources are now captured and checked for articles 2, 3, 4, 6, 8, 10 and 13; remaining "Owner check" notes are reminders (re-check figures before reposting; article 2's 2024-25 figures are still a secondary report) |
 | 25 | **RTI questions** (optional): CBDT, number of returns with a house-property loss above ₹2 lakh and the tax effect of the cap; salaried filers with house-property losses |
 | 15 | Dependabot updates: #7 DigitalOcean provider, #8 nginx 1.31, #10 altcha 2.3 (small); #9 MariaDB 11.8 → 13.0 (major; needs a migration test first) |
 
@@ -60,6 +59,7 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 ## Done
 
 - 2026-10-25: article publish token on staging (fine-grained, Actions only): "Publish to production" / "Unpublish from production" start the workflow directly.
+- 2026-10-25: twelve years of CBDT return statistics captured and analysed (Article 13); primary sources captured for articles 2, 3, 4, 6, 8 and 10.
 - 2026-10-25: staging made private (Cloudflare Access on every staging host; CI uses a service token).
 - 2026-10-25: reviewed article publishing: drafts on staging, "Publish to production" / "Unpublish from production" with approval; Research page lists published articles.
 - 2026-10-25: research evidence folder (`research/`): 12 articles, sources, checksums, scripts, charts.
