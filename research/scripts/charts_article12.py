@@ -65,7 +65,26 @@ def chart(ex: dict) -> str:
     return svg(720, 350, "Tax relief on a rented-out flat's loss, before and after the 2017 cap", desc + ".", body)
 
 
+def long_loan() -> None:
+    """Second example: relief per year under the old rules and under the cap (article12_long_loan.py)."""
+    from article12_long_loan import rows
+    from charts_timeseries import ORANGE, TEAL, line_chart
+    data = [dict(d, assessment_year=d["financial_year"]) for d in rows()]
+    lakh = lambda v: f"₹{v / 100_000:.2f}L"
+    total = sum(d["extra_tax"] for d in data[1:])
+    line_chart("a12-long-loan", "A long loan taken before 2017: relief frozen at ₹62,400",
+               "Tax relief a year on a let-out flat: ₹1.95 crore, 30-year loan, EMI ₹1.5 lakh, rent ₹25,000 a month",
+               data,
+               [("Relief under the old rules", "relief_old_rules", ORANGE, lakh),
+                ("Relief allowed since 2017-18", "relief_now", TEAL, lakh)],
+               5e5, 1e5, lambda v: f"{v / 100_000:.0f}L",
+               f"About ₹{total / 100_000:.1f} lakh more tax over nine years; the unused loss lapses.",
+               "Our calculation (illustration, not tax advice): 8.5% fixed, 30% slab plus cess.",
+               x_title="Financial year")
+
+
 def main() -> None:
+    long_loan()
     ex = example()
     ex["loan_lakh"] = LOAN // 100_000
     OUT.mkdir(exist_ok=True)
