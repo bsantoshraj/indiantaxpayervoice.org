@@ -57,9 +57,9 @@ services:
         define('ITV_CF_BEACON_TOKEN', getenv('ITV_CF_BEACON_TOKEN') ?: '');
         // IndexNow verification id (public; empty = no verification file).
         define('ITV_INDEXNOW_ID', getenv('ITV_INDEXNOW_ID') ?: '');
-        // local | staging | production. On staging, publishing an article asks GitHub to
-        // publish it on production (mu-plugins/itv-publish-relay.php); the token can only
-        // start workflows, and production still waits for the owner's approval.
+        // local | staging | production. On staging, Posts gets "Publish to production" and
+        // "Unpublish from production" links (mu-plugins/itv-publish-relay.php); the token can
+        // only start workflows, and production still waits for the owner's approval.
         define('ITV_ENV', getenv('ITV_ENV') ?: 'local');
         define('ITV_PUBLISH_DISPATCH_TOKEN', getenv('ITV_PUBLISH_DISPATCH_TOKEN') ?: '');
         // Behind the HTTPS proxy (staging/production); WordPress is not reachable directly.

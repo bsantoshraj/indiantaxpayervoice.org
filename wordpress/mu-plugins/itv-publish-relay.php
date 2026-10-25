@@ -1,61 +1,105 @@
 <?php
 /**
  * Plugin Name: ITV Publish Relay
- * Description: On staging, publishing an article asks GitHub Actions to publish it on production ("Publish article" workflow, which waits for the owner's approval). Does nothing elsewhere.
- * Version: 0.1.0
+ * Description: On staging, adds "Publish to production" and "Unpublish from production" to each article in Posts. Each asks GitHub Actions to run "Publish or unpublish article", which waits for the owner's approval. Does nothing elsewhere.
+ * Version: 0.2.0
  */
 
 defined( 'ABSPATH' ) || exit;
 
-// Staging only, and only with a token that may start workflows (a fine-grained
-// token for this repository with "Actions: read and write" and nothing else).
-if ( 'staging' !== ( defined( 'ITV_ENV' ) ? ITV_ENV : '' ) || ! defined( 'ITV_PUBLISH_DISPATCH_TOKEN' ) || '' === ITV_PUBLISH_DISPATCH_TOKEN ) {
+if ( 'staging' !== ( defined( 'ITV_ENV' ) ? ITV_ENV : '' ) ) {
 	return;
 }
 
-const ITV_PUBLISH_WORKFLOW = 'https://api.github.com/repos/bsantoshraj/indiantaxpayervoice.org/actions/workflows/publish-article.yml/dispatches';
+const ITV_PRODUCTION_WORKFLOW = 'https://api.github.com/repos/bsantoshraj/indiantaxpayervoice.org/actions/workflows/publish-article.yml';
 
-add_action(
-	'transition_post_status',
-	function ( $new_status, $old_status, $post ) {
-		if ( 'publish' !== $new_status || 'publish' === $old_status || 'post' !== $post->post_type ) {
-			return;
+// Links on each article in Posts. Publishing to production is offered only for
+// articles published here (reviewed); the workflow checks the text matches too.
+add_filter(
+	'post_row_actions',
+	function ( $actions, $post ) {
+		if ( 'post' !== $post->post_type || ! current_user_can( 'publish_posts' ) ) {
+			return $actions;
 		}
-		$response = wp_remote_post(
-			ITV_PUBLISH_WORKFLOW,
-			array(
-				'timeout' => 15,
-				'headers' => array(
-					'Accept'               => 'application/vnd.github+json',
-					'Authorization'        => 'Bearer ' . ITV_PUBLISH_DISPATCH_TOKEN,
-					'X-GitHub-Api-Version' => '2022-11-28',
-					'Content-Type'         => 'application/json',
-				),
-				'body'    => wp_json_encode(
-					array(
-						'ref'    => 'main',
-						'inputs' => array( 'slug' => $post->post_name ),
-					)
-				),
-			)
+		$link = function ( $what ) use ( $post ) {
+			return wp_nonce_url(
+				admin_url( 'admin-post.php?action=itv_production&do=' . $what . '&post=' . $post->ID ),
+				'itv_production_' . $what . '_' . $post->ID
+			);
+		};
+		if ( 'publish' === $post->post_status ) {
+			$actions['itv_prod_publish'] = sprintf(
+				'<a href="%s" onclick="return confirm(%s)">Publish to production</a>',
+				esc_url( $link( 'publish' ) ),
+				esc_attr( wp_json_encode( 'Ask GitHub to publish this article on production? You will approve it there.' ) )
+			);
+		}
+		$actions['itv_prod_unpublish'] = sprintf(
+			'<a href="%s" onclick="return confirm(%s)" style="color:#b32d2e">Unpublish from production</a>',
+			esc_url( $link( 'unpublish' ) ),
+			esc_attr( wp_json_encode( 'Ask GitHub to take this article off production? You will approve it there.' ) )
 		);
-		$code = is_wp_error( $response ) ? 0 : wp_remote_retrieve_response_code( $response );
-		$note = 204 === $code
-			? sprintf( 'Production publish requested for "%s". Approve it in GitHub: Actions > Publish article.', $post->post_title )
-			: sprintf( 'Could not request the production publish for "%s" (GitHub answered %s). Run Actions > Publish article by hand with slug %s.', $post->post_title, $code ? $code : 'nothing', $post->post_name );
-		set_transient( 'itv_publish_relay_' . get_current_user_id(), array( 204 === $code, $note ), 10 * MINUTE_IN_SECONDS );
-		update_post_meta( $post->ID, '_itv_production_publish', gmdate( 'c' ) . ' ' . ( 204 === $code ? 'requested' : "failed ($code)" ) );
+		return $actions;
 	},
 	10,
-	3
+	2
 );
 
-// Show the outcome to the editor on the next admin page (the block editor saves in
-// the background, so the notice appears after the next page load).
+add_action(
+	'admin_post_itv_production',
+	function () {
+		$what    = isset( $_GET['do'] ) ? sanitize_key( $_GET['do'] ) : '';
+		$post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		check_admin_referer( 'itv_production_' . $what . '_' . $post_id );
+		$post = get_post( $post_id );
+		if ( ! current_user_can( 'publish_posts' ) || ! $post || 'post' !== $post->post_type || ! in_array( $what, array( 'publish', 'unpublish' ), true ) ) {
+			wp_die( 'Not allowed.' );
+		}
+
+		$manual = sprintf( 'Run it by hand: GitHub > Actions > Publish or unpublish article > Run workflow (action %s, slug %s).', $what, $post->post_name );
+		if ( 'publish' === $what && 'publish' !== $post->post_status ) {
+			$notice = array( false, 'Publish the article here on staging and review it first.' );
+		} elseif ( ! defined( 'ITV_PUBLISH_DISPATCH_TOKEN' ) || '' === ITV_PUBLISH_DISPATCH_TOKEN ) {
+			$notice = array( false, 'ITV_PUBLISH_DISPATCH_TOKEN is not set on staging, so this cannot start GitHub Actions. ' . $manual );
+		} else {
+			$response = wp_remote_post(
+				ITV_PRODUCTION_WORKFLOW . '/dispatches',
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'Accept'               => 'application/vnd.github+json',
+						'Authorization'        => 'Bearer ' . ITV_PUBLISH_DISPATCH_TOKEN,
+						'X-GitHub-Api-Version' => '2022-11-28',
+						'Content-Type'         => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'ref'    => 'main',
+							'inputs' => array(
+								'action' => $what,
+								'slug'   => $post->post_name,
+							),
+						)
+					),
+				)
+			);
+			$code   = is_wp_error( $response ) ? 0 : wp_remote_retrieve_response_code( $response );
+			$verb   = 'publish' === $what ? 'Publish' : 'Unpublish';
+			$notice = 204 === $code
+				? array( true, sprintf( '%s requested for "%s". Approve it in GitHub: Actions > Publish or unpublish article.', $verb, $post->post_title ) )
+				: array( false, sprintf( 'GitHub did not accept the request (answered %s). %s', $code ? $code : 'nothing', $manual ) );
+			update_post_meta( $post->ID, '_itv_production_request', gmdate( 'c' ) . " $what " . ( 204 === $code ? 'requested' : "failed ($code)" ) );
+		}
+		set_transient( 'itv_production_notice_' . get_current_user_id(), $notice, 10 * MINUTE_IN_SECONDS );
+		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url( 'edit.php' ) );
+		exit;
+	}
+);
+
 add_action(
 	'admin_notices',
 	function () {
-		$key    = 'itv_publish_relay_' . get_current_user_id();
+		$key    = 'itv_production_notice_' . get_current_user_id();
 		$notice = get_transient( $key );
 		if ( ! $notice ) {
 			return;

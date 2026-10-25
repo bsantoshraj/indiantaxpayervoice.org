@@ -1,18 +1,27 @@
-# Publish one article on production, exactly as reviewed and published on staging.
+# Publish an article on production, exactly as reviewed and published on staging,
+# or take one off production (unpublish: back to draft, kept, not deleted).
 # Articles are proofread as drafts on staging (every staging deploy refreshes them
 # from research/articles; a published article whose text changes goes back to
-# draft). Publishing a post on staging starts this workflow
-# (wordpress/mu-plugins/itv-publish-relay.php), or run it by hand: Actions >
-# Publish article > Run workflow, with the post's slug.
+# draft). Start it from staging's Posts list ("Publish to production" /
+# "Unpublish from production", wordpress/mu-plugins/itv-publish-relay.php), or by
+# hand: Actions > Publish or unpublish article > Run workflow.
 #
-# It waits for the owner's approval (GitHub environment "production"), converts the
-# article from main, refuses unless staging shows that article *published* with the
-# same text fingerprint, and sends it to production. No code deploy is needed.
-name: Publish article
+# Both wait for the owner's approval (GitHub environment "production"). Publish
+# converts the article from main, refuses unless staging shows that article
+# *published* with the same text fingerprint, and sends it to production. No code
+# deploy is needed.
+name: Publish or unpublish article
+run-name: "${{ inputs.action }} ${{ inputs.slug }}"
 
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: "publish on production, or unpublish (take it off production)"
+        required: true
+        type: choice
+        options: [publish, unpublish]
+        default: publish
       slug:
         description: "Article slug, as on staging (e.g. how-many-indians-actually-pay-income-tax)"
         required: true
@@ -43,6 +52,7 @@ jobs:
         with:
           ref: main
       - name: Convert the article from main
+        if: inputs.action == 'publish'
         run: |
           python3 -I research/scripts/article_to_wp.py --slug "$SLUG" > "$RUNNER_TEMP/article.json"
           echo "SHA_MAIN=$(research/scripts/wp_article.sh fingerprint "$SLUG")" >> "$GITHUB_ENV"
@@ -59,6 +69,7 @@ jobs:
           printf '%s\n' "$PRODUCTION_KEY" > ~/.ssh/production && chmod 600 ~/.ssh/production
           printf '%s\n' "$KNOWN_HOSTS" | sed 's/^ *//' > ~/.ssh/known_hosts
       - name: Only what was reviewed and published on staging
+        if: inputs.action == 'publish'
         env:
           STAGING_HOST: ${{ vars.STAGING_HOST }}
         run: |
@@ -67,9 +78,15 @@ jobs:
           [[ "$status" == publish ]] || { echo "::error::'$SLUG' is not published on staging ($status). Review it there and publish it first."; exit 1; }
           [[ "$sha" == "$SHA_MAIN" ]] || { echo "::error::The text on main differs from the version published on staging. Let staging redeploy, review the new text and publish it there again."; exit 1; }
       - name: Publish on production
+        if: inputs.action == 'publish'
         run: |
           ssh -i ~/.ssh/production -o BatchMode=yes -o StrictHostKeyChecking=yes "deploy@$HOST" "publish $SLUG" \
             < "$RUNNER_TEMP/article.json" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Unpublish on production
+        if: inputs.action == 'unpublish'
+        run: |
+          ssh -i ~/.ssh/production -o BatchMode=yes -o StrictHostKeyChecking=yes "deploy@$HOST" "unpublish $SLUG" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Purge the production CDN cache
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PURGE_TOKEN }}
@@ -78,12 +95,21 @@ jobs:
           if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then echo "::warning::CF_PURGE_TOKEN not set; cache not purged"; exit 0; fi
           scripts/purge-cdn.sh indiantaxpayervoice.org
       - name: Check it is live
+        if: inputs.action == 'publish'
         run: |
           sleep 5
           code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://indiantaxpayervoice.org/$SLUG/")
           echo "https://indiantaxpayervoice.org/$SLUG/ -> $code" | tee -a "$GITHUB_STEP_SUMMARY"
           [[ "$code" == 200 ]]
+      - name: Check it is gone
+        if: inputs.action == 'unpublish'
+        run: |
+          sleep 5
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://indiantaxpayervoice.org/$SLUG/")
+          echo "https://indiantaxpayervoice.org/$SLUG/ -> $code" | tee -a "$GITHUB_STEP_SUMMARY"
+          [[ "$code" == 404 ]]
       - name: Notify search engines (IndexNow)
+        if: inputs.action == 'publish'
         env:
           INDEXNOW_ID: ${{ vars.INDEXNOW_ID }}
         run: |
