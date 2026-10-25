@@ -76,6 +76,9 @@ are accepted, otherwise the deploy fails. Secrets never go in the repository.
 
 ### Publish an article (controlled release)
 
+Step-by-step guide, in wp-admin and on the command line (`scripts/article.sh`):
+[articles.md](articles.md).
+
 Articles live in `research/articles/` (one Markdown file each, with their evidence in
 `research/`). Production publishes **only the exact text that was reviewed and
 published on staging**, and only with the owner's approval:
