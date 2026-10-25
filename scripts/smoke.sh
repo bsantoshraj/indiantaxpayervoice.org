@@ -57,9 +57,12 @@ for path in /index.php/admin /admin "/index.php?r=admin/authentication/sa/login"
   # 403: blocked by the Cloudflare WAF; 404: refused by the origin's nginx.
   check "public survey host refuses $path" "@(403|404)" "$(code "$survey$path")"
 done
-check "admin host requires Cloudflare Access" "302 *.cloudflareaccess.com" \
+# Admin applications send people to the login page; the CI service token is not
+# allowed there either, and Access refuses it outright (403).
+admin_refusal="302 *.cloudflareaccess.com"; (( ${#auth[@]} )) && admin_refusal="403 "
+check "admin host requires Cloudflare Access" "$admin_refusal" \
   "$(curl "${auth[@]}" -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$admin/" | sed -E 's#https://([^/]+)/.*#\1#')"
-check "WordPress admin requires Cloudflare Access" "302 *.cloudflareaccess.com" \
+check "WordPress admin requires Cloudflare Access" "$admin_refusal" \
   "$(curl "${auth[@]}" -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 20 "$wp/wp-login.php" | sed -E 's#https://([^/]+)/.*#\1#')"
 check "WAF blocks /xmlrpc.php" 403 "$(code -X POST "$wp/xmlrpc.php")"
 # Security hardening (account names, version, framing)
