@@ -53,7 +53,7 @@ Details, ports and tests: [docs/development.md](docs/development.md).
 | `infra/nginx/` | Survey proxy and statistics server configuration |
 | `infra/staging/` | Caddy configuration and the on-droplet scripts: deploy, backups, restore test, secret rotation |
 | `infra/terraform/` | `staging/` (droplet, firewall, keys) and `cloudflare/` (CDN rules, Access) |
-| `scripts/` | Local setup, deploy fallback, smoke tests, CDN purge, key sync, backup pull |
+| `scripts/` | Local setup, deploy fallback, smoke tests, CDN purge, key sync, backup pull, articles (`article.sh`, guide in [docs/articles.md](docs/articles.md)) |
 | `tests/` | Browser tests: responsive layout and end-to-end survey submission |
 | `.github/` | CI/CD workflow and Dependabot configuration |
 
