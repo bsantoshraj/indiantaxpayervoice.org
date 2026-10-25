@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: ITV Publish Relay
- * Description: On staging, adds "Publish to production" and "Unpublish from production" to each article in Posts. Each asks GitHub Actions to run "Publish or unpublish article", which waits for the owner's approval. Does nothing elsewhere.
- * Version: 0.2.0
+ * Description: On staging, adds "Publish to production" and "Unpublish from production" to each article (Posts list and a Production box in the editor). Each asks GitHub Actions to run "Publish or unpublish article", which waits for the owner's approval. Does nothing elsewhere.
+ * Version: 0.3.0
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -13,6 +13,13 @@ if ( 'staging' !== ( defined( 'ITV_ENV' ) ? ITV_ENV : '' ) ) {
 
 const ITV_PRODUCTION_WORKFLOW = 'https://api.github.com/repos/bsantoshraj/indiantaxpayervoice.org/actions/workflows/publish-article.yml';
 
+function itv_production_link( $what, $post_id ) {
+	return wp_nonce_url(
+		admin_url( 'admin-post.php?action=itv_production&do=' . $what . '&post=' . $post_id ),
+		'itv_production_' . $what . '_' . $post_id
+	);
+}
+
 // Links on each article in Posts. Publishing to production is offered only for
 // articles published here (reviewed); the workflow checks the text matches too.
 add_filter(
@@ -22,10 +29,7 @@ add_filter(
 			return $actions;
 		}
 		$link = function ( $what ) use ( $post ) {
-			return wp_nonce_url(
-				admin_url( 'admin-post.php?action=itv_production&do=' . $what . '&post=' . $post->ID ),
-				'itv_production_' . $what . '_' . $post->ID
-			);
+			return itv_production_link( $what, $post->ID );
 		};
 		if ( 'publish' === $post->post_status ) {
 			$actions['itv_prod_publish'] = sprintf(
@@ -33,6 +37,8 @@ add_filter(
 				esc_url( $link( 'publish' ) ),
 				esc_attr( wp_json_encode( 'Ask GitHub to publish this article on production? You will approve it there.' ) )
 			);
+		} else {
+			$actions['itv_prod_publish'] = '<span style="color:#646970">Publish to production: publish it here first</span>';
 		}
 		$actions['itv_prod_unpublish'] = sprintf(
 			'<a href="%s" onclick="return confirm(%s)" style="color:#b32d2e">Unpublish from production</a>',
@@ -86,13 +92,55 @@ add_action(
 			$code   = is_wp_error( $response ) ? 0 : wp_remote_retrieve_response_code( $response );
 			$verb   = 'publish' === $what ? 'Publish' : 'Unpublish';
 			$notice = 204 === $code
-				? array( true, sprintf( '%s requested for "%s". Approve it in GitHub: Actions > Publish or unpublish article.', $verb, $post->post_title ) )
+				? array( true, sprintf( '%s requested for: %s. Approve it in GitHub: Actions > Publish or unpublish article.', $verb, $post->post_title ) )
 				: array( false, sprintf( 'GitHub did not accept the request (answered %s). %s', $code ? $code : 'nothing', $manual ) );
 			update_post_meta( $post->ID, '_itv_production_request', gmdate( 'c' ) . " $what " . ( 204 === $code ? 'requested' : "failed ($code)" ) );
 		}
 		set_transient( 'itv_production_notice_' . get_current_user_id(), $notice, 10 * MINUTE_IN_SECONDS );
 		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url( 'edit.php' ) );
 		exit;
+	}
+);
+
+// The same two actions in the article editor's sidebar, with the last request.
+add_action(
+	'add_meta_boxes_post',
+	function ( $post ) {
+		if ( ! current_user_can( 'publish_posts' ) ) {
+			return;
+		}
+		add_meta_box(
+			'itv-production',
+			'Production',
+			function ( $post ) {
+				$key    = 'itv_production_notice_' . get_current_user_id();
+				$notice = get_transient( $key );
+				if ( $notice ) {
+					delete_transient( $key );
+					printf( '<p style="color:%s"><strong>%s</strong></p>', $notice[0] ? '#00713a' : '#b32d2e', esc_html( $notice[1] ) );
+				}
+				if ( 'publish' === $post->post_status ) {
+					printf(
+						'<p><a class="button button-primary" href="%s" onclick="return confirm(%s)">Publish to production</a></p>',
+						esc_url( itv_production_link( 'publish', $post->ID ) ),
+						esc_attr( wp_json_encode( 'Ask GitHub to publish this article on production? You will approve it there.' ) )
+					);
+				} else {
+					echo '<p>To publish on production, first publish the article here on staging and review it.</p>';
+				}
+				printf(
+					'<p><a class="button" href="%s" onclick="return confirm(%s)">Unpublish from production</a></p>',
+					esc_url( itv_production_link( 'unpublish', $post->ID ) ),
+					esc_attr( wp_json_encode( 'Ask GitHub to take this article off production? You will approve it there.' ) )
+				);
+				$last = get_post_meta( $post->ID, '_itv_production_request', true );
+				printf( '<p class="description">Last request: %s</p>', esc_html( $last ? $last : 'none' ) );
+				echo '<p class="description">Requests wait for approval in GitHub: Actions › Publish or unpublish article. Save your changes first: these links leave the editor.</p>';
+			},
+			'post',
+			'side',
+			'high'
+		);
 	}
 );
 
