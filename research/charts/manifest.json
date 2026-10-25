@@ -6,7 +6,8 @@
     "The cliff": "research/charts/a11-cliff.svg"
   },
   "12": {
-    "A worked example": "research/charts/a12-relief.svg"
+    "A worked example": "research/charts/a12-relief.svg",
+    "A long loan taken before 2017": "research/charts/a12-long-loan.svg"
   },
   "13": {
     "More people file": "research/charts/ts-filers.svg",

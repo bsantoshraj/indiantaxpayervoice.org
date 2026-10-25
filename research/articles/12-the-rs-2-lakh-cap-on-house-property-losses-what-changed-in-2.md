@@ -35,6 +35,25 @@ A salaried person in the 30% slab buys a flat to rent out with a ₹94 lakh loan
 
 The carried-forward loss helps only if the flat later earns more than its interest. While the loan is large and rent is low, it usually expires unused after eight years.
 
+### A long loan taken before 2017 (our calculation)
+
+A longer loan makes the effect starker: on a 30-year loan the interest barely falls in the first decade, so the cap bites every year. An illustration, with assumed numbers:
+
+Say a flat was bought to let out in April 2016 with a 30-year loan of about ₹1.95 crore at 8.5%: an EMI of ₹1.5 lakh a month, ₹18 lakh a year. The rent is ₹25,000 a month, and the owner is in the 30% slab under the old regime.
+
+| Year | Interest | Loss from the flat | Set off against salary | Carried forward | Extra tax vs old rules |
+| --- | --- | --- | --- | --- | --- |
+| 2016-17 | ₹16.53 lakh | ₹14.43 lakh | ₹14.43 lakh | — | — |
+| 2017-18 | ₹16.39 lakh | ₹14.29 lakh | ₹2 lakh | ₹12.29 lakh | ₹3.84 lakh |
+| 2019-20 | ₹16.10 lakh | ₹14.00 lakh | ₹2 lakh | ₹12.00 lakh | ₹3.74 lakh |
+| 2021-22 | ₹15.75 lakh | ₹13.65 lakh | ₹2 lakh | ₹11.65 lakh | ₹3.63 lakh |
+| 2023-24 | ₹15.33 lakh | ₹13.23 lakh | ₹2 lakh | ₹11.23 lakh | ₹3.50 lakh |
+| 2025-26 | ₹14.84 lakh | ₹12.74 lakh | ₹2 lakh | ₹10.74 lakh | ₹3.35 lakh |
+
+Ten years in, interest is still ₹14.8 lakh of the ₹18 lakh EMI, only 10% below the first year. From 2017-18 the tax relief is frozen at ₹62,400 a year, while about ₹11–12 lakh of loss a year is carried forward: ₹1.04 crore over nine years. It can only be set against future income from the flat, which never arrives while rent is below interest, so each year's loss lapses after eight years. Compared with the rules the loan was taken under, the owner pays about ₹32.6 lakh more tax over those nine years. Under the new regime the relief is zero.
+
+All years are in `research/data/a12-long-loan.csv`; the calculation is `research/scripts/article12_long_loan.py`. It assumes a fixed rate, no municipal tax and no surcharge; it is an illustration, not tax advice.
+
 ### Is it abuse?
 
 **The case against the cap.** Renting out a home is earning income, and interest is the cost of earning it. Every business deducts its costs before paying tax on profit. On that view, taxing someone on their salary while ignoring a real loss on their rental is taxing gross earnings, not net income. And the ₹2 lakh limit is a fixed rupee amount, not linked to inflation or to loan sizes.

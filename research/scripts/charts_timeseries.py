@@ -28,7 +28,8 @@ def load() -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def line_chart(name, title, subtitle, rows, series, y_max, y_step, y_fmt, takeaway, source, mark=None):
+def line_chart(name, title, subtitle, rows, series, y_max, y_step, y_fmt, takeaway, source, mark=None,
+               x_title="Assessment year (income earned the year before)"):
     """series: [(label, key, colour, value_fmt)]; mark: (assessment year, note) drawn as a dashed rule."""
     left, right, top, bottom = 64, 600, 96, 316
     n = len(rows)
@@ -52,8 +53,7 @@ def line_chart(name, title, subtitle, rows, series, y_max, y_step, y_fmt, takeaw
     for i, r in enumerate(rows):
         if (n - 1 - i) % 2 == 0:
             body.append(text(xs[i], bottom + 20, r["assessment_year"], 11.5, MUTED, "middle"))
-    body.append(text((left + right) / 2, bottom + 40, "Assessment year (income earned the year before)", 11.5,
-                     MUTED, "middle"))
+    body.append(text((left + right) / 2, bottom + 40, x_title, 11.5, MUTED, "middle"))
     if mark:
         i = [r["assessment_year"] for r in rows].index(mark[0])
         body.append(f'<line x1="{xs[i]:.1f}" x2="{xs[i]:.1f}" y1="{top - 6}" y2="{bottom}" stroke="{MUTED}" '
