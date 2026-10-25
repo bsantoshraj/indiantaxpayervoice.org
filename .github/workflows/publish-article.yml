@@ -1,0 +1,91 @@
+# Publish one article on production, exactly as reviewed and published on staging.
+# Articles are proofread as drafts on staging (every staging deploy refreshes them
+# from research/articles; a published article whose text changes goes back to
+# draft). Publishing a post on staging starts this workflow
+# (wordpress/mu-plugins/itv-publish-relay.php), or run it by hand: Actions >
+# Publish article > Run workflow, with the post's slug.
+#
+# It waits for the owner's approval (GitHub environment "production"), converts the
+# article from main, refuses unless staging shows that article *published* with the
+# same text fingerprint, and sends it to production. No code deploy is needed.
+name: Publish article
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "Article slug, as on staging (e.g. how-many-indians-actually-pay-income-tax)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash   # bash -eo pipefail: a failed ssh is not hidden by tee
+
+concurrency:
+  group: deploy-production   # never alongside a production deploy
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: production
+    env:
+      HOST: ${{ vars.PRODUCTION_HOST }}
+      SLUG: ${{ inputs.slug }}
+    steps:
+      - name: Check the slug
+        run: '[[ "$SLUG" =~ ^[a-z0-9-]{1,100}$ ]] || { echo "Not an article slug: $SLUG"; exit 1; }'
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Convert the article from main
+        run: |
+          python3 -I research/scripts/article_to_wp.py --slug "$SLUG" > "$RUNNER_TEMP/article.json"
+          echo "SHA_MAIN=$(research/scripts/wp_article.sh fingerprint "$SLUG")" >> "$GITHUB_ENV"
+      - name: SSH keys and pinned host keys
+        env:
+          STAGING_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          PRODUCTION_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          KNOWN_HOSTS: |
+            ${{ vars.STAGING_SSH_KNOWN_HOSTS }}
+            ${{ vars.PRODUCTION_SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$STAGING_KEY" > ~/.ssh/staging && chmod 600 ~/.ssh/staging
+          printf '%s\n' "$PRODUCTION_KEY" > ~/.ssh/production && chmod 600 ~/.ssh/production
+          printf '%s\n' "$KNOWN_HOSTS" | sed 's/^ *//' > ~/.ssh/known_hosts
+      - name: Only what was reviewed and published on staging
+        env:
+          STAGING_HOST: ${{ vars.STAGING_HOST }}
+        run: |
+          read -r status sha < <(ssh -i ~/.ssh/staging -o BatchMode=yes -o StrictHostKeyChecking=yes "deploy@$STAGING_HOST" "status $SLUG")
+          echo "staging: $status $sha; main: $SHA_MAIN"
+          [[ "$status" == publish ]] || { echo "::error::'$SLUG' is not published on staging ($status). Review it there and publish it first."; exit 1; }
+          [[ "$sha" == "$SHA_MAIN" ]] || { echo "::error::The text on main differs from the version published on staging. Let staging redeploy, review the new text and publish it there again."; exit 1; }
+      - name: Publish on production
+        run: |
+          ssh -i ~/.ssh/production -o BatchMode=yes -o StrictHostKeyChecking=yes "deploy@$HOST" "publish $SLUG" \
+            < "$RUNNER_TEMP/article.json" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Purge the production CDN cache
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_PURGE_TOKEN }}
+          ITV_CF_ZONE_ID: ${{ vars.CF_ZONE_ID }}
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then echo "::warning::CF_PURGE_TOKEN not set; cache not purged"; exit 0; fi
+          scripts/purge-cdn.sh indiantaxpayervoice.org
+      - name: Check it is live
+        run: |
+          sleep 5
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://indiantaxpayervoice.org/$SLUG/")
+          echo "https://indiantaxpayervoice.org/$SLUG/ -> $code" | tee -a "$GITHUB_STEP_SUMMARY"
+          [[ "$code" == 200 ]]
+      - name: Notify search engines (IndexNow)
+        env:
+          INDEXNOW_ID: ${{ vars.INDEXNOW_ID }}
+        run: |
+          if [[ -z "$INDEXNOW_ID" ]]; then echo "::notice::INDEXNOW_ID not set; skipping"; exit 0; fi
+          scripts/indexnow.sh indiantaxpayervoice.org || echo "::warning::IndexNow submission failed"

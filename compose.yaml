@@ -49,12 +49,19 @@ services:
       WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
       ITV_CF_BEACON_TOKEN: ${ITV_CF_BEACON_TOKEN:-}
       ITV_INDEXNOW_ID: ${ITV_INDEXNOW_ID:-}
+      ITV_ENV: ${ITV_ENV:-local}
+      ITV_PUBLISH_DISPATCH_TOKEN: ${ITV_PUBLISH_DISPATCH_TOKEN:-}
       WORDPRESS_CONFIG_EXTRA: |
         define('DISALLOW_FILE_EDIT', true);
         // Cloudflare Web Analytics beacon token (public; empty = no analytics).
         define('ITV_CF_BEACON_TOKEN', getenv('ITV_CF_BEACON_TOKEN') ?: '');
         // IndexNow verification id (public; empty = no verification file).
         define('ITV_INDEXNOW_ID', getenv('ITV_INDEXNOW_ID') ?: '');
+        // local | staging | production. On staging, publishing an article asks GitHub to
+        // publish it on production (mu-plugins/itv-publish-relay.php); the token can only
+        // start workflows, and production still waits for the owner's approval.
+        define('ITV_ENV', getenv('ITV_ENV') ?: 'local');
+        define('ITV_PUBLISH_DISPATCH_TOKEN', getenv('ITV_PUBLISH_DISPATCH_TOKEN') ?: '');
         // Behind the HTTPS proxy (staging/production); WordPress is not reachable directly.
         if (($$_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') { $$_SERVER['HTTPS'] = 'on'; }
         define('WP_AUTO_UPDATE_CORE', 'minor');

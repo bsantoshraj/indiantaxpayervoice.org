@@ -13,6 +13,7 @@ variable "environments" {
     survey_admin = string
     stats        = string
     www_redirect = bool # also serve www.<website> as a redirect to the website
+    private      = bool # every hostname behind Cloudflare Access (admins and the CI service token)
   }))
   default = {
     staging = {
@@ -21,6 +22,7 @@ variable "environments" {
       survey_admin = "survey-admin-staging.indiantaxpayervoice.org"
       stats        = "stats-staging.indiantaxpayervoice.org"
       www_redirect = false
+      private      = true
     }
     production = {
       website      = "indiantaxpayervoice.org"
@@ -28,6 +30,7 @@ variable "environments" {
       survey_admin = "survey-admin.indiantaxpayervoice.org"
       stats        = "stats.indiantaxpayervoice.org"
       www_redirect = true
+      private      = false
     }
   }
 }

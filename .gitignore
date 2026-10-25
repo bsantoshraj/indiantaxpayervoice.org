@@ -28,3 +28,7 @@ terraform.tfvars
 
 # Project brief: kept private by the owner (not published with the repository)
 claude.md
+
+# Research: third-party pages kept as local evidence, not republished
+research/sources/local/
+*.tfplan

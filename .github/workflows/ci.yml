@@ -2,7 +2,9 @@
 # (tagged with the commit SHA) and deployed to staging, then smoke-tested.
 # Production (added when it exists) will promote the same SHA's images.
 #
-# Repository secrets:   STAGING_SSH_KEY (restricted CI key), CF_PURGE_TOKEN (Cache Purge only)
+# Repository secrets:   STAGING_SSH_KEY (restricted CI key), CF_PURGE_TOKEN (Cache Purge only),
+#                       STAGING_ACCESS_CLIENT_ID / STAGING_ACCESS_CLIENT_SECRET (Cloudflare Access
+#                       service token: staging is private; from terraform output ci_access_tokens)
 # Repository variables: STAGING_HOST, STAGING_SSH_KNOWN_HOSTS, CF_ZONE_ID
 # Terraform is not applied here: its state lives on the admin machine.
 name: CI
@@ -169,6 +171,9 @@ jobs:
           if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then echo "::warning::CF_PURGE_TOKEN not set; cache not purged"; exit 0; fi
           scripts/purge-cdn.sh staging.indiantaxpayervoice.org stats-staging.indiantaxpayervoice.org
       - name: Smoke tests
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.STAGING_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.STAGING_ACCESS_CLIENT_SECRET }}
         run: |
           sleep 10
           scripts/smoke.sh staging
