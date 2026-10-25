@@ -22,7 +22,6 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 | 6 | **Backup private key** | Keep an offline copy of `~/.config/itv/backup-age.key` (for example in a password manager); without it, backups are unreadable |
 | 7 | **Old credential files** | `~/do_token`, `~/ghcr_token` and `~/do_staging.json` are readable by every user on the admin machine: `chmod 600` them or delete them |
 | 18 | **DNSSEC** | Cloudflare dashboard → DNS → Settings → *Enable DNSSEC*, then add the DS record it shows at your domain registrar |
-| 21 | **Article publish token** | Create a fine-grained GitHub token: this repository only, permission *Actions: read and write*, nothing else. Add it to the staging `/opt/itv/.env` as `ITV_PUBLISH_DISPATCH_TOKEN=…` and redeploy staging. Until then, staging's "Publish to production" / "Unpublish from production" links explain how to run the workflow by hand ([ci-cd.md](ci-cd.md#publish-an-article-controlled-release)) |
 | 22 | **Renew staging's CI Access token by 2027-10-25** | It is valid for a year. Renew as in [operations.md](operations.md#renew-the-ci-access-token-for-staging); otherwise the staging smoke tests fail |
 | 19 | **DMARC to quarantine** | Around 7 November 2026, if DMARC reports to `hello@` show only Google sending and passing: ask to set `dmarc_policy = "quarantine"` |
 
@@ -60,6 +59,7 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 
 ## Done
 
+- 2026-10-25: article publish token on staging (fine-grained, Actions only): "Publish to production" / "Unpublish from production" start the workflow directly.
 - 2026-10-25: staging made private (Cloudflare Access on every staging host; CI uses a service token).
 - 2026-10-25: reviewed article publishing: drafts on staging, "Publish to production" / "Unpublish from production" with approval; Research page lists published articles.
 - 2026-10-25: research evidence folder (`research/`): 12 articles, sources, checksums, scripts, charts.

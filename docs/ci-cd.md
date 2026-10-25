@@ -88,7 +88,9 @@ published on staging**, and only with the owner's approval:
  4. Proofread          staging wp-admin ▶ Posts ▶ Drafts ▶ Preview (staging is private)
  5. Publish on staging the article becomes visible on the staging site (and on its
                        Research page); review it there as readers will see it
- 6. Push to production staging ▶ Posts ▶ "Publish to production" on that article
+ 6. Push to production "Publish to production": in the article editor's Production box,
+                       or under the article in Posts (hover); shown once it is
+                       published on staging
                        (itv-publish-relay starts "Publish or unpublish article");
                        GitHub asks the owner to approve (environment "production")
  7. Checks             the workflow converts the article from main and stops unless
@@ -97,7 +99,8 @@ published on staging**, and only with the owner's approval:
                        checked (200) and search engines are notified (IndexNow)
 ```
 
-- **Taking an article down:** staging ▶ Posts ▶ "Unpublish from production" (or run the
+- **Taking an article down:** "Unpublish from production" in the editor's Production box
+  or under the article in Posts (or run the
   workflow with action `unpublish`). After approval production sets it back to draft
   (kept, not deleted), purges the CDN and checks the URL now answers 404.
 - **Changed text needs a new review.** When a merge changes an article that is
