@@ -7,6 +7,10 @@ deduction). Before AY 2018-19 the whole loss was set off against other income;
 from FY 2017-18 at most Rs 2 lakh, the rest carried forward (8 years, against
 house-property income only, which this flat never has).
 
+Knock-on cost: each year's extra tax is money that could have prepaid the loan;
+`value_if_prepaid` is that tax plus the 8.5% interest it would have saved, to the
+end of the last year shown (each payment taken at mid-year).
+
 Writes data/a12-long-loan.csv and prints a Markdown table. Illustration, not tax advice.
 
 Usage:
@@ -46,6 +50,8 @@ def rows() -> list[dict]:
             "relief_now": round(allowed * TAX),
             "extra_tax": round((loss - allowed) * TAX),
         })
+    for i, d in enumerate(out):
+        d["value_if_prepaid"] = round(d["extra_tax"] * (1 + RATE) ** (len(out) - 1 - i + 0.5))
     return out
 
 
@@ -65,7 +71,9 @@ def main() -> None:
     r = RATE / 12
     print(f"\nLoan {lakh(EMI * (1 - (1 + r) ** -(YEARS * 12)) / r)}; FY 2017-18 to {data[-1]['financial_year']}: "
           f"carried forward {lakh(sum(d['carried_forward'] for d in capped))}, extra tax "
-          f"{lakh(sum(d['extra_tax'] for d in capped))}, relief now {lakh(capped[0]['relief_now'])} a year")
+          f"{lakh(sum(d['extra_tax'] for d in capped))}, relief now {lakh(capped[0]['relief_now'])} a year; "
+          f"with the interest it could have saved {lakh(sum(d['value_if_prepaid'] for d in capped))}; "
+          f"cess within the extra tax {lakh(sum(d['extra_tax'] for d in capped) * 0.04 / 1.04)}")
 
 
 if __name__ == "__main__":

@@ -52,6 +52,8 @@ Say a flat was bought to let out in April 2016 with a 30-year loan of about ₹1
 
 Ten years in, interest is still ₹14.8 lakh of the ₹18 lakh EMI, only 10% below the first year. From 2017-18 the tax relief is frozen at ₹62,400 a year, while about ₹11–12 lakh of loss a year is carried forward: ₹1.04 crore over nine years. It can only be set against future income from the flat, which never arrives while rent is below interest, so each year's loss lapses after eight years. Compared with the rules the loan was taken under, the owner pays about ₹32.6 lakh more tax over those nine years. Under the new regime the relief is zero.
 
+**The knock-on cost.** The ₹32.6 lakh is only what was paid. Each year's extra tax is money that could otherwise have prepaid a loan charging 8.5%. Counting the interest that would have saved, the cost by the end of 2025-26 is about ₹48.5 lakh: ₹15.9 lakh more than the tax itself. The 2017-18 payment of ₹3.84 lakh alone is worth ₹7.67 lakh today, and the gap keeps widening over the loan's remaining 20 years. About ₹1.25 lakh of the extra is the 4% cess charged on the tax itself; owners with income above ₹50 lakh also pay surcharge on top.
+
 All years are in `research/data/a12-long-loan.csv`; the calculation is `research/scripts/article12_long_loan.py`. It assumes a fixed rate, no municipal tax and no surcharge; it is an illustration, not tax advice.
 
 ### Is it abuse?
