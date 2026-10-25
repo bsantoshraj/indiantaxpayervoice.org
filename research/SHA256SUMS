@@ -10,6 +10,17 @@ aca3f769ccd473d27429926424110b387120e40b588b10f9f7b61bdc9f6f2f21  sources/a08-wo
 31dfd5c2185ecd0fc796446c50570b82d6f08fbb9f2fa37d8a11fd55f3792f39  sources/a11-cbdt-itr-stats-ay2022-23.pdf
 eeb7c53d4cd62a71985896174859952bb110002c2b3845eabcff461966a348f5  sources/a11-cbdt-itr-stats-ay2023-24.pdf
 edb7e166f3bdb4dd518ab9f0adb8f62fa7dc0d3dc0623b78f2ca049dcd66b112  sources/a12-delhihc-sanjeev-goyal-2024.pdf
+a490491e49f0af2e87969a6220f2ed60e964a439620331b15c4f6b2a35ea1ad1  sources/a13-cbdt-itr-stats-ay2012-13.pdf
+25398f98d2123086b8957b16d84ee3277cdad7773aabe93f60f9f2275eda16dd  sources/a13-cbdt-itr-stats-ay2013-14.pdf
+0f757174035e4c0bff8596da30a5d29d5a264beb2e2ed8c82e46c011ede3aa12  sources/a13-cbdt-itr-stats-ay2014-15.pdf
+af76676cd72b6e6b07e7f044086f8001ff0df81d4b00488546ebe706ebd76918  sources/a13-cbdt-itr-stats-ay2015-16.pdf
+6471d1c74f4aebbb1ca792a692550e129e28903046c3be43b3dbc7d9154b8ce2  sources/a13-cbdt-itr-stats-ay2016-17.pdf
+0605ea87d7cd9a2811750422ee606ac2a520f463ee5dded8fe51e2d053615b14  sources/a13-cbdt-itr-stats-ay2017-18.pdf
+3614070558416b5c853610b6071d88fa8ff1340e90d26248d844ef81bb727d6f  sources/a13-cbdt-itr-stats-ay2018-19.pdf
+1924aab51d9d986299a4f43a6f9232c8bc6b4341092e60b272cbaef112ee6aec  sources/a13-cbdt-itr-stats-ay2019-20.pdf
+7e461ee8a520e499a4659924e4c45502aacfa5eb6d933ee237d0ef4ab3565855  sources/a13-cbdt-itr-stats-ay2020-21.pdf
+5d42dd6f905b6918b3ea47f1911025afd2a7b313f4355469a96ebedbb1e64b78  sources/a13-cbdt-itr-stats-ay2021-22.pdf
+5015c8485d3a62903873b7bdff951b2cac5f1691d8487dc47d6cd4583a8707dd  sources/a13-worldbank-cpi-india.json
 bbe103c228bc67e24d6d6151da56f915b10561c7e012da11f4793b23e26d6b7f  sources/local/a01-angelone-abvky-2027.html
 a09ee69638f6ea5acc7b6082b216f5c067993d03deee670e196bc0182decf163  sources/local/a01-dlapiper-labour-codes.html
 31772215cc20db167c4a6cfd3855b1f235464e21c85f9f1bdbd979baa9e154d9  sources/local/a02-outlookbusiness-itr-ay2526.html
@@ -34,3 +45,4 @@ c6393d0ab92396be6cfff98c27381b295861dc25e27acf39f77f9667e75ecf89  sources/local/
 78d37dcebd79f7d1989f4db6b9f429777d96f7c1e7ee77dc05718e89ef37226e  sources/local/a11-wion-budget-2025-slabs.html
 78fb15a4c13a1fb15cea00e8e60a89569b08d55068c05ebc1c39125d4a648a35  sources/local/a12-businesstoday-budget2017-hp-loss.html
 4fae168257a2af8de9a445673d7463cf48ee46d9f9bf41707a1b426ed8814671  sources/local/a12-taxguru-grandfathering-ltcg.html
+d61bf22c8574d33ac39a6da3efef5d80ee61e213436a92fdf859d3c35518396e  sources/local/a13-altnews-rebate-5-lakh-2019.html

@@ -7,5 +7,11 @@
   },
   "12": {
     "A worked example": "research/charts/a12-relief.svg"
+  },
+  "13": {
+    "More people file": "research/charts/ts-filers.svg",
+    "Most people who file": "research/charts/ts-no-tax.svg",
+    "Tax is paid by a shrinking": "research/charts/ts-concentration.svg",
+    "Inflation and fixed lines": "research/charts/ts-top1.svg"
   }
 }

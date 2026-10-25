@@ -6,8 +6,10 @@
 #                                          as evidence, not republished)
 #
 # A source that refuses the download (many Indian government sites block
-# scripts) is fetched from its latest Internet Archive snapshot instead; the
-# manifest records which.  Existing files are kept, so a re-run never
+# scripts) is fetched from the Internet Archive instead: its newest snapshot, or
+# else the newest snapshot the archive's index lists as a good (200) capture.
+# A .pdf source that comes back as anything but a PDF counts as a failure.
+# The log records which route each copy took.  Existing files are kept, so a re-run never
 # overwrites what was captured earlier; delete a file to capture it again.
 #
 # Usage: research/scripts/harvest.sh
@@ -27,8 +29,17 @@ ext_for() {
   esac
 }
 
-fetch() { # url out -> prints content type, fails on HTTP error
-  curl -sSL --fail --max-time 120 -A "$ua" -o "$2" -w '%{content_type}' "$1"
+fetch() { # url out -> prints content type, fails on HTTP error or a non-PDF for a .pdf
+  local ctype
+  ctype=$(curl -sSL --fail --max-time 120 -A "$ua" -o "$2" -w '%{content_type}' "$1") || return 1
+  if [[ "${1%%\?*}" == *.pdf ]] && [[ "$(head -c 5 "$2")" != "%PDF-" ]]; then return 1; fi
+  printf %s "$ctype"
+}
+
+# newest good (HTTP 200) archive snapshot of a URL, as a timestamp
+snapshot() {
+  curl -s --max-time 60 "https://web.archive.org/cdx/search/cdx?url=$1&output=json&fl=timestamp&filter=statuscode:200" \
+    | python3 -I -c 'import json,sys; rows=json.load(sys.stdin)[1:]; print(rows[-1][0] if rows else "")' 2>/dev/null
 }
 
 tail -n +2 "$root/sources.csv" | while IFS= read -r line; do
@@ -49,9 +60,13 @@ tail -n +2 "$root/sources.csv" | while IFS= read -r line; do
   if ! ctype="$(fetch "$url" "$tmp" 2>/dev/null)"; then
     via=wayback
     if ! ctype="$(fetch "https://web.archive.org/web/2026id_/$url" "$tmp" 2>/dev/null)"; then
-      echo "FAILED $id"
-      rm -f "$tmp"
-      continue
+      ts=$(snapshot "$url")
+      via="wayback-$ts"
+      if [[ -z "$ts" ]] || ! ctype="$(fetch "https://web.archive.org/web/${ts}id_/$url" "$tmp" 2>/dev/null)"; then
+        echo "FAILED $id"
+        rm -f "$tmp"
+        continue
+      fi
     fi
   fi
   out="$dir/$id.$(ext_for "$ctype")"
