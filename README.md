@@ -45,7 +45,8 @@ Details, ports and tests: [docs/development.md](docs/development.md).
 
 | Path | Contents |
 |---|---|
-| `wordpress/` | Theme (`themes/itv`), statistics plugin (`mu-plugins/itv-stats.php`), page content (`content/*.html`), `bootstrap.sh` |
+| `wordpress/` | Theme (`themes/itv`), must-use plugins (`mu-plugins/`: statistics, SEO, hardening, publish relay), page content (`content/*.html`), `bootstrap.sh` |
+| `research/` | Articles (one Markdown file each), their sources with checksums, extraction and chart scripts ([research/README.md](research/README.md)) |
 | `survey/` | Questionnaire definition (`questionnaire-v1.json`, the single source of truth) and the LimeSurvey import builder |
 | `aggregator/` | Export → validate → suppress → publish statistics (Python, standard library only) |
 | `gate/` | Survey bot check and Cloudflare Access token verification (Python) |

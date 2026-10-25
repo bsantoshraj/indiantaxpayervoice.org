@@ -12,6 +12,8 @@
 #                                  article_to_wp.py. Production runs this only from the
 #                                  "Publish article" workflow, after the owner's
 #                                  approval, so an article goes live without a code deploy.
+#   wp_article.sh unpublish <slug> take the article off this site: back to draft (kept,
+#                                  not deleted). Production runs this from the workflow.
 #   wp_article.sh status <slug>    "<status> <fingerprint>" of that post here (read-only;
 #                                  the workflow asks staging before publishing).
 #   wp_article.sh fingerprint <slug>  fingerprint of the repository's version.
@@ -21,7 +23,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-usage() { echo "usage: $0 drafts | publish <slug> | receive <slug> < article.json | status <slug> | fingerprint <slug>" >&2; exit 2; }
+usage() { echo "usage: $0 drafts | publish <slug> | receive <slug> < article.json | unpublish <slug> | status <slug> | fingerprint <slug>" >&2; exit 2; }
 
 # fingerprint <json>: SHA-256 of the article's title and content, as stored with the
 # post (_itv_source_sha256). Production publishes only an article whose fingerprint
@@ -93,6 +95,13 @@ except ValueError:
 ok = isinstance(d, dict) and d.get("slug") == sys.argv[2] and all(isinstance(d.get(k), str) and d[k] for k in ("title", "content"))
 sys.exit(0 if ok else "receive: stdin is not the article " + sys.argv[2])' "$json" "$slug"
     upsert "$json" publish ;;
+  unpublish)
+    slug=${2:-}; [[ "$slug" =~ ^[a-z0-9-]{1,100}$ ]] || usage
+    docker compose run --rm -T -e "SLUG=$slug" wpcli sh -c '
+      id=$(wp post list --post_type=post --name="$SLUG" --post_status=any --field=ID --format=ids)
+      if [ -z "$id" ]; then echo "$SLUG: not on this site"; exit 0; fi
+      wp post update "$id" --post_status=draft >/dev/null
+      echo "$SLUG: post $id, $(wp post get "$id" --field=post_status) (unpublished)"' 2>&1 | grep -E "^[a-z0-9-]+: |Error" ;;
   status)
     slug=${2:-}; [[ "$slug" =~ ^[a-z0-9-]{1,100}$ ]] || usage
     status "$slug" ;;

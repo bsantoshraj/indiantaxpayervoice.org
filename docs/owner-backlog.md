@@ -2,7 +2,7 @@
 
 Action items that need the owner: decisions, accounts, content and reviews that
 cannot be done in code. Engineering work is tracked in GitHub issues (label
-`backlog`) and in the phase reports. Last updated: 2026-10-24 (end of day).
+`backlog`) and in the phase reports. Last updated: 2026-10-25.
 
 ## Blocking Phase 1 sign-off
 
@@ -22,6 +22,8 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 | 6 | **Backup private key** | Keep an offline copy of `~/.config/itv/backup-age.key` (for example in a password manager); without it, backups are unreadable |
 | 7 | **Old credential files** | `~/do_token`, `~/ghcr_token` and `~/do_staging.json` are readable by every user on the admin machine: `chmod 600` them or delete them |
 | 18 | **DNSSEC** | Cloudflare dashboard → DNS → Settings → *Enable DNSSEC*, then add the DS record it shows at your domain registrar |
+| 21 | **Article publish token** | Create a fine-grained GitHub token: this repository only, permission *Actions: read and write*, nothing else. Add it to the staging `/opt/itv/.env` as `ITV_PUBLISH_DISPATCH_TOKEN=…` and redeploy staging. Until then, staging's "Publish to production" / "Unpublish from production" links explain how to run the workflow by hand ([ci-cd.md](ci-cd.md#publish-an-article-controlled-release)) |
+| 22 | **Renew staging's CI Access token by 2027-10-25** | It is valid for a year. Renew as in [operations.md](operations.md#renew-the-ci-access-token-for-staging); otherwise the staging smoke tests fail |
 | 19 | **DMARC to quarantine** | Around 7 November 2026, if DMARC reports to `hello@` show only Google sending and passing: ask to set `dmarc_policy = "quarantine"` |
 
 ## Decisions
@@ -40,6 +42,9 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 | # | Item |
 |---|---|
 | 14 | Merge approvals for open pull requests (the pipeline deploys `main` to staging) |
+| 23 | **Article review before publishing**: each article's "Owner check" notes in the drafts doc; a tax professional's check of the tax tables in articles 7, 11 and 12 |
+| 24 | **Older CBDT return statistics (AY 2012-13 to 2021-22)** for the 10-year picture: incometaxindia.gov.in refuses scripted downloads. Download them in a browser into `research/sources/` as `a11-cbdt-itr-stats-ayYYYY-YY.pdf` ([research/README.md](../research/README.md)) |
+| 25 | **RTI questions** (optional): CBDT, number of returns with a house-property loss above ₹2 lakh and the tax effect of the cap; salaried filers with house-property losses |
 | 15 | Dependabot updates: #7 DigitalOcean provider, #8 nginx 1.31, #10 altcha 2.3 (small); #9 MariaDB 11.8 → 13.0 (major; needs a migration test first) |
 
 ## Production
@@ -55,6 +60,10 @@ cannot be done in code. Engineering work is tracked in GitHub issues (label
 
 ## Done
 
+- 2026-10-25: staging made private (Cloudflare Access on every staging host; CI uses a service token).
+- 2026-10-25: reviewed article publishing: drafts on staging, "Publish to production" / "Unpublish from production" with approval; Research page lists published articles.
+- 2026-10-25: research evidence folder (`research/`): 12 articles, sources, checksums, scripts, charts.
+- 2026-10-25: daily backup copies to the admin machine via anacron (catch up after sleep).
 - 2026-10-24: external security review; fixes live (account names and version hidden, framing protection, SPF/DMARC/CAA, Bot Fight Mode off).
 - 2026-10-24: production live on indiantaxpayervoice.org; survey opened by controlled release (before the legal, privacy and methodologist reviews, by owner decision).
 
