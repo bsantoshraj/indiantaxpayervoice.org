@@ -4,7 +4,7 @@
 # - Caddy terminates HTTPS with Let's Encrypt; every app port stays on 127.0.0.1
 services:
   caddy:
-    image: caddy:2.11.6-alpine
+    image: caddy:2.11.7-alpine
     restart: unless-stopped
     ports:
       - "80:80"
